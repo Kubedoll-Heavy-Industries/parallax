@@ -237,7 +237,7 @@ class GradientServer:
         self.notify_url = notify_url
         self.model_name = model_name
         self.enable_weight_refit = enable_weight_refit
-        self.last_refit_time = 0
+        self.last_refit_time = 0.0
         self.max_batch_size = max_batch_size
         self.max_sequence_length = max_sequence_length
         self.prefix_id = f"{dht_prefix}_announce"
@@ -561,15 +561,15 @@ class GradientServer:
             cid:        List[str],  cid list.
             index_map:  Dict[str],  key(weight_name): value(cid)
         """
-        print("begin chat and run refit:")
-        print(message)
+        print("begin chat and run refit")
+        message = message.result(timeout=300)
         # step1. Check weight refit trigger message
         time_stamp = message.get("time_stamp", None)
         cid = message.get("cid", None)
         index_map = message.get("index_map", None)
         if time_stamp is None or cid is None:
             return
-        if self.last_refit_time >= time_stamp:
+        if self.last_refit_time >= float(time_stamp):
             # Weight already updated
             return
 
@@ -601,6 +601,9 @@ class GradientServer:
 
         # step3. save weight to disk
         weight_dir = os.path.join("/tmp", str(time_stamp))
+        folder = os.path.exists(weight_dir)
+        if not folder:
+            os.makedirs(weight_dir)
         while download_cid_set:
             cid = download_cid_set.pop()
             try:
@@ -617,11 +620,11 @@ class GradientServer:
             file_name = cid + ".safetensors"
             file_name = os.path.join(weight_dir, file_name)
             with open(file_name, "wb") as f:
-                f.write_file(raw_data)
+                f.write(raw_data)
 
         # step4. send ipc message to update weight
         self.connection_handler.ipc_weight_refit(weight_dir)
-        self.last_refit_time = time_stamp
+        self.last_refit_time = float(time_stamp)
 
     def start_node_announcer(self):
         """Start a thread that regularly announces this module's presence on DHT"""
