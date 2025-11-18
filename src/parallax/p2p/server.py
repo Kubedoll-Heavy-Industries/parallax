@@ -561,7 +561,6 @@ class GradientServer:
             cid:        List[str],  cid list.
             index_map:  Dict[str],  key(weight_name): value(cid)
         """
-        print("begin chat and run refit")
         message = message.result(timeout=300)
         # step1. Check weight refit trigger message
         time_stamp = message.get("time_stamp", None)
@@ -572,7 +571,8 @@ class GradientServer:
         if self.last_refit_time >= float(time_stamp):
             # Weight already updated
             return
-
+        
+        print("begin chat and run refit")
         # step2. Download needed weight files from lattica
         download_cid_set = set()
         layer_key_prefix = "model.layers"
