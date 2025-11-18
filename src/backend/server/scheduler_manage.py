@@ -80,6 +80,9 @@ class SchedulerManage:
         self.scheduler.refit_request = request_data
         self.scheduler.refit_set = set()
         return True
+    
+    def get_last_refit_time(self):
+        return self.scheduler.update_last_refit_time()
 
     def is_running(self):
         """

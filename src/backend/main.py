@@ -84,6 +84,18 @@ async def weight_refit(raw_request: Request):
         )
 
 
+@app.get("/weight/refit/timestamp")
+async def weight_refit_timstamp():
+    last_refit_time = scheduler_manage.get_last_refit_time()
+
+    return JSONResponse(
+        content={
+            "latest_timestamp": last_refit_time,
+        },
+        status_code=200,
+    )
+
+
 @app.get("/node/join/command")
 async def node_join_command():
     peer_id = scheduler_manage.get_peer_id()

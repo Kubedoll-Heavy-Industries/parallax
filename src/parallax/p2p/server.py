@@ -710,6 +710,7 @@ class GradientServer:
             "rtt_to_nodes": self.rtts,
             "status": self.status.value,
             "is_active": self.status == ServerState.READY,
+            "last_refit_time": self.last_refit_time,
         }
 
         if is_update:
