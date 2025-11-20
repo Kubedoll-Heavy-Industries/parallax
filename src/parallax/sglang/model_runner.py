@@ -604,7 +604,7 @@ def refit_sgl_model(
 ):
     """Runtime weight refit from disk"""
     logger.info(f"Begin refit weight from path: {refit_weight_path}")
-    weight_files = glob.glob(str(refit_weight_path / "*.safetensors"))
+    weight_files = glob.glob(refit_weight_path + "/*.safetensors")
     assert weight_files, f"Weight safetensors files not found in path: {refit_weight_path}"
 
     tensors = {}
