@@ -638,7 +638,7 @@ def refit_sgl_model(
                 tensors[final_key] = concate_result
                 concate_list=[]
         prev_key = key
-    save_file_path = refit_weight_path + "model.safetensors"
+    save_file_path = refit_weight_path + "/model.safetensors"
     save_file(tensors, save_file_path)
 
     model_runner.update_weights_from_disk(model_path=refit_weight_path, load_format="auto")
