@@ -15,7 +15,8 @@ import sglang
 import sglang.srt.distributed.parallel_state
 import torch
 from mlx_lm.utils import get_model_path, load_config
-from safetensors import safe_open, save_file
+from safetensors import safe_open
+from safetensors.torch import save_file
 from sglang.srt.configs.model_config import ModelConfig
 from sglang.srt.distributed import (
     get_tp_group,
