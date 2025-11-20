@@ -604,23 +604,23 @@ class GradientServer:
         folder = os.path.exists(weight_dir)
         if not folder:
             os.makedirs(weight_dir)
-        while download_cid_set:
-            cid = download_cid_set.pop()
-            try:
-                logger.info(f"Start downloading refit weight {cid}")
-                raw_data = self.lattica.get_block(cid)
-            except Exception:
+            while download_cid_set:
+                cid = download_cid_set.pop()
                 try:
-                    providers = self.lattica.get_providers(cid)
-                    self.lattica.with_bootstraps(providers)
-                    download_cid_set.add(cid)
-                    continue
-                except Exception as e:
-                    raise RuntimeError(f"Failed to get block: {e}")
-            file_name = cid + ".safetensors"
-            file_name = os.path.join(weight_dir, file_name)
-            with open(file_name, "wb") as f:
-                f.write(raw_data)
+                    logger.info(f"Start downloading refit weight {cid}")
+                    raw_data = self.lattica.get_block(cid)
+                except Exception:
+                    try:
+                        providers = self.lattica.get_providers(cid)
+                        self.lattica.with_bootstraps(providers)
+                        download_cid_set.add(cid)
+                        continue
+                    except Exception as e:
+                        raise RuntimeError(f"Failed to get block: {e}")
+                file_name = cid + ".safetensors"
+                file_name = os.path.join(weight_dir, file_name)
+                with open(file_name, "wb") as f:
+                    f.write(raw_data)
 
         # step4. send ipc message to update weight
         self.connection_handler.ipc_weight_refit(weight_dir)
