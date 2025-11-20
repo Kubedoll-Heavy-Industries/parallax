@@ -73,6 +73,7 @@ class RPCConnectionHandler(ConnectionHandler):
                 layer_latency_ms=node.layer_latency_ms,
                 new_rtt_to_nodes=node.rtt_to_nodes,
                 is_active=node.is_active,
+                last_refit_time=node.last_refit_time,
             )
             res = {}
             if self.scheduler.refit_request:
