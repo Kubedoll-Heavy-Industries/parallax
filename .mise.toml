@@ -1,0 +1,72 @@
+# Mise configuration for Parallax development environment
+# Install mise: https://mise.jdx.dev/
+
+[tools]
+python = "3.12"      # Primary development version
+node = "22"          # For frontend development
+
+[env]
+# Enable Python virtual environment
+_.python.venv = { path = ".venv", create = true }
+
+# Suppress tokenizer warnings
+TOKENIZERS_PARALLELISM = "false"
+
+[tasks.install]
+description = "Install dependencies (macOS)"
+run = "uv sync"
+
+[tasks.install-gpu]
+description = "Install dependencies with both GPU backends (Linux)"
+run = "uv sync --extra sglang,vllm"
+
+[tasks.install-gpu-sglang]
+description = "Install dependencies with SGLang backend (Linux)"
+run = "uv sync --extra sglang"
+
+[tasks.install-gpu-vllm]
+description = "Install dependencies with vLLM backend (Linux)"
+run = "uv sync --extra vllm"
+
+[tasks.frontend-install]
+description = "Install frontend dependencies"
+dir = "src/frontend"
+run = "pnpm install"
+
+[tasks.frontend-dev]
+description = "Start frontend development server"
+dir = "src/frontend"
+run = "pnpm run dev"
+
+[tasks.frontend-build]
+description = "Build frontend for production"
+dir = "src/frontend"
+run = "pnpm run build"
+
+[tasks.test]
+description = "Run all tests"
+run = "pytest tests/ -v"
+
+[tasks.test-cov]
+description = "Run tests with coverage report"
+run = "pytest tests/ -v --cov=src/parallax --cov=src/scheduling --cov-report=term --cov-report=html"
+
+[tasks.nox]
+description = "Run nox for multi-version testing"
+run = "uv run nox"
+
+[tasks.lint]
+description = "Check and format code with ruff"
+run = "ruff check --fix . && ruff format ."
+
+[tasks.pre-commit]
+description = "Check and format code with ruff"
+run = "pre-commit run --all-files"
+
+[tasks.build]
+description = "Build wheel distribution"
+run = "uv build"
+
+[tasks.clean-build]
+description = "Clean build artifacts"
+run = "rm -rf dist/ build/ *.egg-info .eggs/"

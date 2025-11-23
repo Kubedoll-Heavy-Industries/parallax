@@ -1,0 +1,35 @@
+{
+  "recommendations": [
+    // Python
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+
+    // Ruff (linting and formatting)
+    "charliermarsh.ruff",
+
+    // TOML support
+    "tamasfe.even-better-toml",
+
+    // Mise (environment management)
+    "jdx.mise",
+
+    // Git
+    "eamodio.gitlens",
+
+    // Testing
+    "littlefoxteam.vscode-python-test-adapter",
+
+    // Frontend (if working on React UI)
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode"
+  ],
+  "unwantedRecommendations": [
+    // These conflict with Ruff
+    "ms-python.black-formatter",
+    "ms-python.isort",
+    "ms-python.flake8",
+
+    // We use Pylance instead
+    "ms-python.mypy-type-checker"
+  ]
+}

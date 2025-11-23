@@ -64,10 +64,28 @@ pre-commit install
 
 **2. Run pre-commit to check and format your code before each commit:**
 ```bash
-pre-commit run --all-files
+mise run pre-commit
+# or: pre-commit run --all-files
 ```
 
-This will help ensure your code adheres to the project's standards and reduces formatting-related review comments.
+### Testing
+
+```bash
+# Lint and format
+mise run lint
+# or: ruff check --fix . && ruff format .
+
+# Run tests
+mise run test
+# or: pytest tests/ -v
+
+mise run test-cov
+# or: pytest tests/ -v --cov=src/parallax --cov=src/scheduling --cov-report=term --cov-report=html
+
+mise run nox
+# or: uv run nox
+```
+
 
 ### Push to your remote branch
 
