@@ -30,11 +30,10 @@ dependencies = [
   "lattica==1.0.14",   # Pinned for P2P protocol stability
   "orjson>=3.10.0,<4.0.0",
 
-  # Mac backend (MLX) - auto-installed on macOS
   "torch>=2.9.0; sys_platform == 'darwin'",
   "mlx-lm==0.28.0",  # Pinned - 0.28.3+ has breaking API changes (removed get_model_path)
   "mlx==0.29.1; sys_platform == 'darwin'",
-  "mlx[cpu]==0.29.1; sys_platform != 'darwin'",  # CPU-only MLX for Linux
+  "mlx[cpu]==0.29.1; sys_platform != 'darwin'",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -55,15 +54,13 @@ dev = [
 
 
 [project.optional-dependencies]
-# GPU backends (Linux only)
 sglang = [
-  "sglang[all]==0.5.5; sys_platform != 'darwin'",
+  "sglang[checkpoint-engine,diffusion]==0.5.5; sys_platform != 'darwin'",
 ]
 
 vllm = [
   "vllm==0.11.0; sys_platform != 'darwin'",
 ]
-
 
 # Benchmarking tools
 benchmark = [
