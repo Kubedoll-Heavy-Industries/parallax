@@ -37,21 +37,18 @@ git clone https://github.com/GradientHQ/parallax.git
 cd parallax
 
 # One-time setup
-mise trust
-mise install
+# Trust the current directory's .mise.toml and install its tools
+mise trust && mise install
 
 # Install dependencies
-mise run install                 # macOS
+mise run install          # macOS
 # or: uv sync
 
-mise run install-gpu-sglang      # Linux with SGLang
+mise run install-sglang   # Linux with SGLang
 # or: uv sync --extra sglang
 
-mise run install-gpu-vllm        # Linux with vLLM
+mise run install-vllm     # Linux with vLLM
 # or: uv sync --extra vllm
-
-mise run install-gpu             # Linux with both
-# or: uv sync --extra sglang --extra vllm
 
 # Install parallax globally (optional, makes `parallax` command available everywhere)
 pipx install --python python3.14 .

@@ -30,12 +30,15 @@ dependencies = [
   "lattica==1.0.14",   # Pinned for P2P protocol stability
   "orjson>=3.10.0,<4.0.0",
 
-  # Mac backend (MLX) - platform-specific installation
-  "torch>=2.9.0,<2.9.1; sys_platform == 'darwin'",
+  # Mac backend (MLX) - auto-installed on macOS
+  "torch>=2.9.0; sys_platform == 'darwin'",
   "mlx-lm==0.28.0",  # Pinned - 0.28.3+ has breaking API changes (removed get_model_path)
-  "mlx>=0.29.1; sys_platform == 'darwin'",  # GPU version for macOS
-  "mlx[cpu]>=0.29.1; sys_platform != 'darwin'",  # CPU version for Linux/Windows
+  "mlx==0.29.1; sys_platform == 'darwin'",
+  "mlx[cpu]==0.29.1; sys_platform != 'darwin'",  # CPU-only MLX for Linux
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/parallax", "src/scheduling", "src/parallax_utils"]
 
 [project.scripts]
 parallax = "parallax.cli:main"
@@ -50,15 +53,15 @@ dev = [
   "nox>=2025.11.12",
 ]
 
+
 [project.optional-dependencies]
 # GPU backends (Linux only)
 sglang = [
-  # NOTE(cagyirey): Version >=0.5.2 to allow vllm 0.11.x
-  "sglang>=0.5.2,<0.6.0",
+  "sglang[all]==0.5.5; sys_platform != 'darwin'",
 ]
 
 vllm = [
-  "vllm>=0.11.2,<0.12.0",
+  "vllm==0.11.0; sys_platform != 'darwin'",
 ]
 
 
@@ -70,8 +73,13 @@ benchmark = [
   "pillow>=11.0.0",
   "modelscope>=1.21.0",
 ]
-
-
+[tool.uv]
+conflicts = [
+  [
+    { extra = "sglang" },
+    { extra = "vllm" },
+  ],
+]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
@@ -98,7 +106,6 @@ precision = 2
 show_missing = true
 skip_covered = false
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/parallax", "src/scheduling", "src/parallax_utils", "src/backend"]
+
 
 

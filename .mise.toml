@@ -16,15 +16,11 @@ TOKENIZERS_PARALLELISM = "false"
 description = "Install dependencies (macOS)"
 run = "uv sync"
 
-[tasks.install-gpu]
-description = "Install dependencies with both GPU backends (Linux)"
-run = "uv sync --extra sglang --extra vllm"
-
-[tasks.install-gpu-sglang]
+[tasks.install-sglang]
 description = "Install dependencies with SGLang backend (Linux)"
 run = "uv sync --extra sglang"
 
-[tasks.install-gpu-vllm]
+[tasks.install-vllm]
 description = "Install dependencies with vLLM backend (Linux)"
 run = "uv sync --extra vllm"
 
