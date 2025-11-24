@@ -30,7 +30,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 **Setup and install:**
 
-> [!NOTE] For Python 3.14, use `pipx` instead of `uv` as `uv` doesn't recognize 3.14 wheels as compatible with `cp38-abi3` dependencies like lattica.
+1. Clone the repository and set up your developer environment
 
 ```sh
 git clone https://github.com/GradientHQ/parallax.git
@@ -40,7 +40,11 @@ cd parallax
 # Trust the current directory's .mise.toml and install its tools
 mise trust && mise install
 
-# Install dependencies
+```
+
+2. Install the dependencies for your desired backend:
+
+```sh
 mise run install          # macOS
 # or: uv sync
 
@@ -49,10 +53,16 @@ mise run install-sglang   # Linux with SGLang
 
 mise run install-vllm     # Linux with vLLM
 # or: uv sync --extra vllm
+```
 
-# Install parallax globally (optional, makes `parallax` command available everywhere)
-pipx install --python python3.14 .
-# or for Python 3.11-3.13: uv tool install .
+3. Install the Parallax CLI as a global tool:
+
+```py
+uv tool install . # for Python 3.11-3.13
+# To use: `uvx parallax`
+
+pipx install --python python3.14 . # for Python 3.14, until `uv tool install` supports the lattica wheel on 3.14
+# To use: `parallax`
 ```
 
 > [!NOTE]
