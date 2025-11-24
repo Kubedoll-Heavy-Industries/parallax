@@ -30,10 +30,11 @@ dependencies = [
   "lattica==1.0.14",   # Pinned for P2P protocol stability
   "orjson>=3.10.0,<4.0.0",
 
-  # Mac backend (MLX) - auto-installed on macOS
+  # Mac backend (MLX) - platform-specific installation
   "torch>=2.9.0,<2.9.1; sys_platform == 'darwin'",
   "mlx-lm==0.28.0",  # Pinned - 0.28.3+ has breaking API changes (removed get_model_path)
-  "mlx>=0.29.1",
+  "mlx>=0.29.1; sys_platform == 'darwin'",  # GPU version for macOS
+  "mlx[cpu]>=0.29.1; sys_platform != 'darwin'",  # CPU version for Linux/Windows
 ]
 
 [project.scripts]
@@ -98,6 +99,6 @@ show_missing = true
 skip_covered = false
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/parallax", "src/scheduling", "src/parallax_utils"]
+packages = ["src/parallax", "src/scheduling", "src/parallax_utils", "src/backend"]
 
 

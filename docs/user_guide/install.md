@@ -30,6 +30,8 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 **Setup and install:**
 
+> [!NOTE] For Python 3.14, use `pipx` instead of `uv` as `uv` doesn't recognize 3.14 wheels as compatible with `cp38-abi3` dependencies like lattica.
+
 ```sh
 git clone https://github.com/GradientHQ/parallax.git
 cd parallax
@@ -49,11 +51,11 @@ mise run install-gpu-vllm        # Linux with vLLM
 # or: uv sync --extra vllm
 
 mise run install-gpu             # Linux with both
-# or: uv sync --extra sglang,vllm
+# or: uv sync --extra sglang --extra vllm
 
 # Install parallax globally (optional, makes `parallax` command available everywhere)
-uv tool install --editable .
-# or: uv pip install --user --editable .
+pipx install --python python3.14 .
+# or for Python 3.11-3.13: uv tool install .
 ```
 
 > [!NOTE]
@@ -109,11 +111,14 @@ The container starts under parallax workspace and you should be able to run para
 For macOS or Linux:
 
 ```sh
-# If installed using `pip` or `uv pip`
-pip uninstall parallax
+# If installed using pipx
+pipx uninstall parallax
 
-# If installed globally
+# If installed using uv tool
 uv tool uninstall parallax
+
+# If installed using pip
+pip uninstall parallax
 
 # Remove local environment
 rm -rf .venv

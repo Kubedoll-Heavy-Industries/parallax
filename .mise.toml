@@ -18,7 +18,7 @@ run = "uv sync"
 
 [tasks.install-gpu]
 description = "Install dependencies with both GPU backends (Linux)"
-run = "uv sync --extra sglang,vllm"
+run = "uv sync --extra sglang --extra vllm"
 
 [tasks.install-gpu-sglang]
 description = "Install dependencies with SGLang backend (Linux)"
