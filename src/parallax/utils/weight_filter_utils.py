@@ -166,7 +166,7 @@ def determine_needed_weight_files_for_download(
         ):
             needed_files.add(filename)
 
-    result = sorted(list(needed_files))
+    result = sorted(needed_files)
     logger.debug(
         f"Determined {len(result)} weight files needed for layers [{start_layer}, {end_layer})"
     )

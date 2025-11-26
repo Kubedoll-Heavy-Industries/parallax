@@ -145,10 +145,7 @@ class MLXModelLoader:
         if not model_type:
             raise ValueError("model_type not found in config.json")
 
-        if model_type in MODEL_CLASS_MAP:
-            model_class = MODEL_CLASS_MAP[model_type]
-        else:
-            model_class = f"mlx_lm.models.{model_type}"
+        model_class = MODEL_CLASS_MAP.get(model_type, f"mlx_lm.models.{model_type}")
 
         try:
             arch_module = importlib.import_module(model_class)

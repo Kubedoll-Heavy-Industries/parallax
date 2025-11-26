@@ -164,6 +164,7 @@ class ParallaxQwen3NextGatedDeltaNet(MLXQwen3NextGatedDeltaNet):
                 mx.split(conv_out, [self.key_dim, 2 * self.key_dim], -1),
                 [self.num_k_heads, self.num_k_heads, self.num_v_heads],
                 [self.head_k_dim, self.head_k_dim, self.head_v_dim],
+                strict=False,
             )
         ]
         if state_cache is not None:

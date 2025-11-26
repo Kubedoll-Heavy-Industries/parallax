@@ -36,7 +36,7 @@ class HexColorPrinter:
 
     @classmethod
     def color_distance(cls, rgb1, rgb2):
-        return math.sqrt(sum((c1 - c2) ** 2 for c1, c2 in zip(rgb1, rgb2)))
+        return math.sqrt(sum((c1 - c2) ** 2 for c1, c2 in zip(rgb1, rgb2, strict=False)))
 
     @classmethod
     def find_closest_color(cls, target_hex):

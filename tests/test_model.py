@@ -74,7 +74,7 @@ def test_shard_prefill(layers_config: list[tuple[int, int]]) -> None:
             mask_inner = create_attention_mask(h, cache[0])
         else:
             mask_inner = mask
-        for layer, c in zip(self.layers, cache):
+        for layer, c in zip(self.layers, cache, strict=False):
             h = layer(h, mask_inner, c)
         h = self.model.norm(h)
         if self.args.tie_word_embeddings:

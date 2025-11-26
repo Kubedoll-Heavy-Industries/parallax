@@ -75,7 +75,7 @@ def pad_or_trim_tensor(tensor: torch.Tensor, target_len: int) -> torch.Tensor:
         return tensor
     if current_len > target_len:
         return tensor[:target_len]
-    pad_shape = (target_len - current_len,) + tensor.shape[1:]
+    pad_shape = (target_len - current_len, *tensor.shape[1:])
     pad = tensor.new_zeros(pad_shape)
     return torch.cat((tensor, pad), dim=0)
 

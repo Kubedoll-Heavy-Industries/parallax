@@ -346,7 +346,7 @@ class KVCacheManager:
         assert head_dim_v == self.head_dim_v, "key and value must have the same head dimension"
         # TODO: Use vmap for better performance
         for request, key, value, length, state0, state1 in zip(
-            requests, keys, values, lengths, states0, states1
+            requests, keys, values, lengths, states0, states1, strict=False
         ):
             length = length.item()
             assert self.has_request(request.request_id), "request not in cache"

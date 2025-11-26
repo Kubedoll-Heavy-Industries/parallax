@@ -50,7 +50,7 @@ class TreeNode:
 def _key_match_page_size1(key0: list, key1: list):
     """Key match function especially for page_size=1"""
     i = 0
-    for k0, k1 in zip(key0, key1):
+    for k0, k1 in zip(key0, key1, strict=False):
         if k0 != k1:
             break
         i += 1

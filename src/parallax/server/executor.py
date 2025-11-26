@@ -774,7 +774,7 @@ class Executor:
                 assert req.hidden_states is not None and req.hidden_states.shape[0] == 1
                 h_list.append(req.hidden_states)
             if self.enable_prefix_cache:
-                self.prefix_cache.update_req_to_token(req.request_id, list([req.next_token_id]))
+                self.prefix_cache.update_req_to_token(req.request_id, [req.next_token_id])
 
             num_tokens_in_cache = self.kv_cache_manager.request_length(req.request_id)
             cache_lengths.append(num_tokens_in_cache)
