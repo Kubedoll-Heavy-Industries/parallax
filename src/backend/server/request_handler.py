@@ -44,7 +44,7 @@ class RequestHandler:
         logger.debug(f"Forwarding request {request_id}; stream={request_data.get('stream', False)}")
         if (
             self.scheduler_manage is None
-            or not self.scheduler_manage.get_schedule_status() == NODE_STATUS_AVAILABLE
+            or self.scheduler_manage.get_schedule_status() != NODE_STATUS_AVAILABLE
         ):
             return JSONResponse(
                 content={"error": "Server is not ready"},

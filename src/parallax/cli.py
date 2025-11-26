@@ -60,7 +60,7 @@ def _flag_present(args_list: list[str], flag_names: list[str]) -> bool:
     if not args_list:
         return False
     flags_set = set(flag_names)
-    for i, token in enumerate(args_list):
+    for _i, token in enumerate(args_list):
         if token in flags_set:
             return True
         for flag in flags_set:

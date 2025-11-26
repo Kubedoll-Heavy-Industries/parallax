@@ -154,9 +154,7 @@ class BaseLayerAllocator:
         """Validate the allocation."""
         if start_layer < 0 or end_layer > self.num_total_layers:
             return False
-        if start_layer >= end_layer:
-            return False
-        return True
+        return not start_layer >= end_layer
 
     def global_allocation(self) -> bool:
         """Static assignment based on existing nodes. For cold-start and global rebalancing.
@@ -403,7 +401,7 @@ class BaseLayerAllocator:
         target = [min(caps[i], lam * compute_powers[i]) for i in range(n)]
 
         # Integerization: floor + largest remainders (respect caps)
-        stage_layer_counts = [min(caps[i], int(floor(target[i]))) for i in range(n)]
+        stage_layer_counts = [min(caps[i], floor(target[i])) for i in range(n)]
         assigned = sum(stage_layer_counts)
         remaining = total_layers - assigned
         if remaining > 0:
@@ -479,7 +477,7 @@ class BaseLayerAllocator:
         start_layer = 0
         remaining_layers = total_layers
 
-        for idx, node in enumerate(pipeline_nodes):
+        for _idx, node in enumerate(pipeline_nodes):
             include_input_embed = start_layer == 0
 
             # Base capacity without LM head
@@ -932,7 +930,7 @@ class DynamicProgrammingLayerAllocator(BaseLayerAllocator):
                             best_cost = cost
                             best_action = ("start", 0, True)
                     else:
-                        new_open = list(open_residuals) + [r_new]
+                        new_open = [*list(open_residuals), r_new]
                         new_open.sort()
                         cost = 1 + dp(i + 1, tuple(new_open), finished_pipes)
                         if cost < best_cost:
@@ -942,7 +940,7 @@ class DynamicProgrammingLayerAllocator(BaseLayerAllocator):
                 path[(i, open_residuals, finished_pipes)] = best_action
                 return best_cost
 
-            s_star = dp(0, tuple(), 0)
+            s_star = dp(0, (), 0)
             if s_star < float("inf"):
                 score = (k_target * k_target) / s_star  # Z(k) = k^2 / s*(k)
                 if score > best_score:
