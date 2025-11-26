@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import importlib
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable
 
 import torch
 from mlx_lm.utils import load_config
@@ -34,6 +34,7 @@ from parallax.utils.tokenizer_utils import load_tokenizer
 from parallax.vllm.monkey_patch import apply_parallax_vllm_monkey_patch
 from parallax_utils.logging_config import get_logger
 
+
 logger = get_logger(__name__)
 
 
@@ -45,12 +46,12 @@ class ParallaxVLLMGroupCoordinator(VLLMGroupCoordinator):
 
     def __init__(
         self,
-        group_ranks: List[List[int]],
+        group_ranks: list[list[int]],
         local_rank: int,
-        torch_distributed_backend: Union[str, torch.distributed.Backend],
+        torch_distributed_backend: str | torch.distributed.Backend,
         use_device_communicator: bool,
         use_message_queue_broadcaster: bool = False,
-        group_name: Optional[str] = None,
+        group_name: str | None = None,
         pp_start_layer: int = 0,
         pp_end_layer: int = 0,
         num_hidden_layers: int = 0,
@@ -80,7 +81,7 @@ class ParallaxVLLMGroupCoordinator(VLLMGroupCoordinator):
 
 def _create_kv_cache_config_from_specs(
     kv_cache_group: KVCacheGroupSpec,
-    attn_layers: List[str],
+    attn_layers: list[str],
     kv_cache_memory_fraction: float,
 ) -> KVCacheConfig:
     import torch
@@ -119,11 +120,10 @@ def _create_kv_cache_config_from_specs(
 
 
 class ParallaxVLLMModelRunner(GPUModelRunner):
-
     def __init__(
         self,
         vllm_config: VllmConfig,
-        kv_cache_config: Optional[KVCacheConfig],
+        kv_cache_config: KVCacheConfig | None,
         device: str,
         start_layer: int,
         end_layer: int,
@@ -140,7 +140,7 @@ class ParallaxVLLMModelRunner(GPUModelRunner):
         self.pp_rank = 0
         self.pp_size = 1
 
-        self.request_block_hasher: Optional[Callable[[Any], List[Any]]] = None
+        self.request_block_hasher: Callable[[Any], list[Any]] | None = None
         self.enable_prefix_caching: bool = True
 
         super().__init__(vllm_config=vllm_config, device=torch.device(device))
@@ -263,8 +263,8 @@ class ParallaxVLLMModelRunner(GPUModelRunner):
         if enable_prefix and kv_cache_manager.block_size is not None:
             try:
                 hashing_mod = importlib.import_module("vllm.utils.hashing")
-                get_hash_fn_by_name: Callable[[str], Callable[[Any], bytes]] = getattr(
-                    hashing_mod, "get_hash_fn_by_name"
+                get_hash_fn_by_name: Callable[[str], Callable[[Any], bytes]] = (
+                    hashing_mod.get_hash_fn_by_name
                 )
                 hash_fn = get_hash_fn_by_name(cache_config.prefix_caching_hash_algo)
                 init_none_hash(hash_fn)
@@ -346,11 +346,11 @@ def initialize_vllm_model_runner(
     max_num_tokens_per_batch: int = 1024,
     dtype: str = "float16",
     **kwargs,
-) -> Tuple[ParallaxVLLMModelRunner, Dict, Any]:
+) -> tuple[ParallaxVLLMModelRunner, dict, Any]:
     from parallax.utils.selective_download import get_model_path_with_selective_download
 
     logger.info(
-        f"Initializing vLLM model runner for {model_repo}, " f"layers=[{start_layer}, {end_layer})"
+        f"Initializing vLLM model runner for {model_repo}, layers=[{start_layer}, {end_layer})"
     )
 
     model_path = get_model_path_with_selective_download(
@@ -396,7 +396,7 @@ def initialize_vllm_model_runner(
     import vllm.distributed.parallel_state as parallel_state
 
     if not parallel_state.model_parallel_is_initialized():
-        logger.debug(f"Initializing vLLM distributed environment...")
+        logger.debug("Initializing vLLM distributed environment...")
 
         # Set environment variables for distributed initialization
         if "RANK" not in os.environ:
@@ -449,7 +449,7 @@ def initialize_vllm_model_runner(
                     f"is_last_rank={parallax_pp_group.is_last_rank}"
                 )
 
-            logger.debug(f"vLLM distributed environment initialized")
+            logger.debug("vLLM distributed environment initialized")
         except Exception as e:
             logger.warning(f"Failed to initialize distributed environment: {e}")
             logger.error(f"vLLM distributed initialization failed. Error: {e}")

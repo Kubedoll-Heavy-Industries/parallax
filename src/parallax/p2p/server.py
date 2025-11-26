@@ -13,7 +13,6 @@ import json
 import multiprocessing
 import threading
 import time
-from typing import List, Optional
 
 import dijkstar
 import httpx
@@ -27,6 +26,7 @@ from parallax.server.server_info import detect_node_hardware
 from parallax.utils.shared_state import SharedState
 from parallax.utils.utils import get_zmq_socket
 from parallax_utils.logging_config import get_logger, set_log_level
+
 
 logger = get_logger(__name__)
 
@@ -60,10 +60,10 @@ class ServerInfo:
     """Server info data class."""
 
     state: ServerState
-    throughput: Optional[float] = None
-    max_batch_size: Optional[int] = None
-    max_sequence_len: Optional[int] = None
-    error_message: Optional[str] = None
+    throughput: float | None = None
+    max_batch_size: int | None = None
+    max_sequence_len: int | None = None
+    error_message: str | None = None
 
 
 def send_notify(notify_url, block_start_index, block_end_index, request, status):
@@ -107,8 +107,8 @@ class TransformerConnectionHandler(ConnectionHandler):
         send_to_peer_addr: str,
         block_start_index: int,
         block_end_index: int,
-        http_port: Optional[int] = None,
-        notify_url: Optional[str] = None,
+        http_port: int | None = None,
+        notify_url: str | None = None,
     ):
         # Initialize the base class
         super().__init__(lattica)
@@ -196,21 +196,21 @@ class GradientServer:
         self,
         recv_from_peer_addr: str,
         send_to_peer_addr: str,
-        initial_peers: List[str] = [],
-        scheduler_addr: Optional[str] = None,
-        relay_servers: List[str] = [],
+        initial_peers: list[str] = [],
+        scheduler_addr: str | None = None,
+        relay_servers: list[str] = [],
         block_start_index: int = 0,
         block_end_index: int = 1,
         hidden_layers: int = 128,
         tp_size: int = 1,
         dht_prefix: str = "gradient",
-        host_maddrs: List[str] = [],
-        http_port: Optional[int] = None,
-        announce_maddrs: List[str] = [],
+        host_maddrs: list[str] = [],
+        http_port: int | None = None,
+        announce_maddrs: list[str] = [],
         notify_url: str = None,
-        model_name: Optional[str] = None,
-        max_batch_size: Optional[int] = None,
-        max_sequence_length: Optional[int] = None,
+        model_name: str | None = None,
+        max_batch_size: int | None = None,
+        max_sequence_length: int | None = None,
         param_mem_ratio: float = 0.65,
         kvcache_mem_ratio: float = 0.25,
     ):
@@ -448,7 +448,7 @@ class GradientServer:
     def start_node_sender(self):
         send_to_peer = get_zmq_socket(zmq.Context(2), zmq.PULL, self.send_to_peer_addr, True)
 
-        def group_requests_by_next_peer(requests: List[forward_pb2.Req]):
+        def group_requests_by_next_peer(requests: list[forward_pb2.Req]):
             grouped_requests = {}
             for req in requests:
                 assert len(req.routing_table) > 0, "Request routing table is not set"
@@ -490,9 +490,9 @@ class GradientServer:
                     for req in forward_request.reqs:
                         # set routing table if not scheduler mode
                         if len(req.routing_table) == 0 and self.scheduler_addr is None:
-                            assert (
-                                self.block_start_index == 0
-                            ), "Request routing table is not set for non-head rank"
+                            assert self.block_start_index == 0, (
+                                "Request routing table is not set for non-head rank"
+                            )
 
                             req.routing_table.extend(self.routing_table)
                             logger.info(
@@ -540,9 +540,9 @@ class GradientServer:
                     for req in abort_request.reqs:
                         # set routing table if not scheduler mode
                         if len(req.routing_table) == 0 and self.scheduler_addr is None:
-                            assert (
-                                self.block_start_index == 0
-                            ), "Request routing table is not set for non-head rank"
+                            assert self.block_start_index == 0, (
+                                "Request routing table is not set for non-head rank"
+                            )
 
                             req.routing_table.extend(self.routing_table)
                             logger.info(
@@ -769,9 +769,9 @@ class GradientServer:
 
 
 def _run_p2p_server_process(
-    initial_peers: List[str],
-    scheduler_addr: Optional[str],
-    relay_servers: List[str],
+    initial_peers: list[str],
+    scheduler_addr: str | None,
+    relay_servers: list[str],
     pp_start_layer: int,
     pp_end_layer: int,
     hidden_layers: int,
@@ -779,17 +779,17 @@ def _run_p2p_server_process(
     tcp_port: int,
     udp_port: int,
     dht_prefix: str,
-    announce_maddrs: List[str],
-    http_port: Optional[int],
+    announce_maddrs: list[str],
+    http_port: int | None,
     notify_url: str,
     recv_from_peer_addr: str,
     send_to_peer_addr: str,
-    model_name: Optional[str],
-    max_batch_size: Optional[int] = None,
-    max_sequence_length: Optional[int] = None,
+    model_name: str | None,
+    max_batch_size: int | None = None,
+    max_sequence_length: int | None = None,
     param_mem_ratio: float = 0.65,
     kvcache_mem_ratio: float = 0.25,
-    shared_state: Optional[dict] = None,
+    shared_state: dict | None = None,
     log_level: str = "INFO",
 ):
     """Run P2P server in subprocess"""
@@ -845,9 +845,9 @@ def _run_p2p_server_process(
 
 
 def launch_p2p_server_process(
-    initial_peers: List[str],
-    scheduler_addr: Optional[str],
-    relay_servers: List[str],
+    initial_peers: list[str],
+    scheduler_addr: str | None,
+    relay_servers: list[str],
     pp_start_layer: int,
     pp_end_layer: int,
     hidden_layers: int,
@@ -855,17 +855,17 @@ def launch_p2p_server_process(
     tcp_port: int,
     udp_port: int,
     dht_prefix: str,
-    announce_maddrs: List[str],
-    http_port: Optional[int],
+    announce_maddrs: list[str],
+    http_port: int | None,
     notify_url: str,
     recv_from_peer_addr: str,
     send_to_peer_addr: str,
-    model_name: Optional[str],
-    max_batch_size: Optional[int] = None,
-    max_sequence_length: Optional[int] = None,
+    model_name: str | None,
+    max_batch_size: int | None = None,
+    max_sequence_length: int | None = None,
     param_mem_ratio: float = 0.65,
     kvcache_mem_ratio: float = 0.25,
-    shared_state: Optional[dict] = None,
+    shared_state: dict | None = None,
     log_level: str = "INFO",
 ) -> multiprocessing.Process:
     """Launch P2P server as a subprocess and return the process object
@@ -906,7 +906,7 @@ def launch_p2p_server_process(
     return process
 
 
-def stop_p2p_server(p2p_server_process: Optional[multiprocessing.Process]):
+def stop_p2p_server(p2p_server_process: multiprocessing.Process | None):
     """Stop P2P server subprocess"""
     if p2p_server_process is not None and p2p_server_process.is_alive():
         logger.debug("Terminating P2P server subprocess...")

@@ -20,7 +20,7 @@ Executor handles
 import argparse
 import time
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import mlx.core as mx
 import torch
@@ -61,6 +61,7 @@ from parallax.utils.utils import (
 )
 from parallax_utils.logging_config import get_logger, set_log_level
 
+
 logger = get_logger(__name__)
 
 
@@ -78,46 +79,46 @@ class Executor:
         gpu_backend: str = "sglang",
         use_hfcache: bool = False,
         # Scheduler Configs
-        max_batch_size: Optional[int] = 8,
-        max_sequence_length: Optional[int] = None,
-        max_tokens_in_kv_pool: Optional[int] = None,
+        max_batch_size: int | None = 8,
+        max_sequence_length: int | None = None,
+        max_tokens_in_kv_pool: int | None = None,
         # Controlling perfill / decode ratio
         max_num_tokens_per_batch: int = 1024,
         prefill_priority: int = 0,
         micro_batch_ratio: int = 2,
         scheduler_wait_ms: int = 500,
-        request_timeout_s: Optional[int] = 600,
+        request_timeout_s: int | None = 600,
         # Metrics Configs
         layer_latency_update_every: int = 4096,
         # KV Cache Configs
         kv_block_size: int = 64,
         kv_cache_memory_fraction: float = 0.8,
-        enable_prefix_cache: Optional[bool] = False,
+        enable_prefix_cache: bool | None = False,
         # Communication Configs
         # P2P Communication Configs
-        send_to_peer_addr: Optional[str] = None,
-        recv_from_peer_addr: Optional[str] = None,
+        send_to_peer_addr: str | None = None,
+        recv_from_peer_addr: str | None = None,
         # IPC Communication Configs
-        executor_input_ipc_addr: Optional[str] = None,
-        executor_output_ipc_addr: Optional[str] = None,
+        executor_input_ipc_addr: str | None = None,
+        executor_output_ipc_addr: str | None = None,
         # GPU/SGLang Specialized Configs
-        attention_backend: Optional[str] = "flashinfer",
-        moe_runner_backend: Optional[str] = "auto",
-        enable_lora: Optional[bool] = False,
-        max_lora_rank: Optional[int] = None,
-        lora_target_modules: Optional[List[str]] = None,
-        lora_paths: Optional[List[str]] = None,
-        max_loras_per_batch: Optional[int] = None,
-        max_loaded_loras: Optional[int] = None,
-        lora_eviction_policy: Optional[str] = "lru",
-        lora_backend: Optional[str] = "triton",
-        max_lora_chunk_size: Optional[int] = 128,
+        attention_backend: str | None = "flashinfer",
+        moe_runner_backend: str | None = "auto",
+        enable_lora: bool | None = False,
+        max_lora_rank: int | None = None,
+        lora_target_modules: list[str] | None = None,
+        lora_paths: list[str] | None = None,
+        max_loras_per_batch: int | None = None,
+        max_loaded_loras: int | None = None,
+        lora_eviction_policy: str | None = "lru",
+        lora_backend: str | None = "triton",
+        max_lora_chunk_size: int | None = 128,
         # Tensor Parallel Configs
-        tp_rank: Optional[int] = 0,
-        tp_size: Optional[int] = 1,
-        nccl_port: Optional[int] = 4000,
+        tp_rank: int | None = 0,
+        tp_size: int | None = 1,
+        nccl_port: int | None = 4000,
         # Optional shared state for layer reallocation detection (when running in subprocess)
-        shared_state: Optional[dict] = None,
+        shared_state: dict | None = None,
     ):
         # Backend
         self.device = get_current_device()
@@ -374,7 +375,7 @@ class Executor:
         )
         return broadcast_result
 
-    def recv_requests_from_http(self) -> List[Request]:
+    def recv_requests_from_http(self) -> list[Request]:
         """Receives requests from http frontend"""
         if self.tp_rank != 0:
             return []
@@ -403,7 +404,7 @@ class Executor:
             logger.debug(f"Received {len(recv_reqs)} HTTP requests")
         return recv_reqs
 
-    def recv_requests_from_peer(self) -> List[Request]:
+    def recv_requests_from_peer(self) -> list[Request]:
         """Receives requests from the RPC server."""
         if self.tp_rank == 0:
             recv_reqs = []
@@ -463,7 +464,7 @@ class Executor:
 
         return recv_reqs
 
-    def _prepare_cuda_prefill_batch(self, batched_requests: List[Request]) -> Dict[str, Any]:
+    def _prepare_cuda_prefill_batch(self, batched_requests: list[Request]) -> dict[str, Any]:
         """
         Prepares inputs for CUDA backends from a batch of prefill requests.
         Routes to SGLang or vLLM depending on backend_type.
@@ -567,7 +568,7 @@ class Executor:
             logger.debug(f"Prepared CUDA prefill batch (sglang, size={batch_size})")
             return ret
 
-    def _prepare_cuda_decode_batch(self, batched_requests: List[Request]) -> Dict[str, Any]:
+    def _prepare_cuda_decode_batch(self, batched_requests: list[Request]) -> dict[str, Any]:
         """
         Prepares inputs for CUDA backends from a batch of decode requests.
         Routes to SGLang or vLLM depending on backend_type.
@@ -655,7 +656,7 @@ class Executor:
             logger.debug(f"Prepared CUDA decode batch (sglang, size={batch_size})")
             return ret
 
-    def _prepare_mlx_prefill_batch(self, batched_requests: List[Request]) -> Dict[str, Any]:
+    def _prepare_mlx_prefill_batch(self, batched_requests: list[Request]) -> dict[str, Any]:
         """Prepares inputs for ShardedModel from a batch of prefill requests."""
         batch_size = len(batched_requests)
         if batch_size == 0:
@@ -670,14 +671,14 @@ class Executor:
         for req in batched_requests:
             assert req.is_prefill, f"Request {req.request_id} is not a prefill request."
             if self.is_first_peer:
-                assert hasattr(
-                    req, "input_ids"
-                ), f"Request {req.request_id} should has attribute input_ids in FirstPeer."
+                assert hasattr(req, "input_ids"), (
+                    f"Request {req.request_id} should has attribute input_ids in FirstPeer."
+                )
                 h.append(req.input_ids)
             else:
-                assert isinstance(
-                    req, IntermediateRequest
-                ), f"Request {req.request_id} should not be in FirstPeer."
+                assert isinstance(req, IntermediateRequest), (
+                    f"Request {req.request_id} should not be in FirstPeer."
+                )
                 h.append(req.hidden_states)
             lengths.append(req.total_length)
 
@@ -688,9 +689,9 @@ class Executor:
                     kv = self.prefix_cache.fetch_kv_cache(node)
                     k_caches.append(kv[0])
                     v_caches.append(kv[1])
-                    assert len(value) == (
-                        kv[0].shape[2]
-                    ), f"Mached prefix length{len(value)} mismatches kv cache length {kv[0].shape[2]}."
+                    assert len(value) == (kv[0].shape[2]), (
+                        f"Mached prefix length{len(value)} mismatches kv cache length {kv[0].shape[2]}."
+                    )
                     matched_prefix = True
                     self.kv_cache_manager.add_matched_prefix_request(req, kv[0], kv[1], len(value))
                     actual_lengths.append(req.total_length - len(value))
@@ -751,9 +752,7 @@ class Executor:
         )
         return ret
 
-    def _prepare_mlx_decode_batch(
-        self, batched_requests: List[Request]
-    ) -> Optional[Dict[str, Any]]:
+    def _prepare_mlx_decode_batch(self, batched_requests: list[Request]) -> dict[str, Any] | None:
         """Prepares inputs for ShardedModel from a batch of decode requests."""
         batch_size = len(batched_requests)
         if batch_size == 0:
@@ -820,7 +819,7 @@ class Executor:
         logger.debug(f"Prepared MLX decode batch (size={batch_size})")
         return ret
 
-    def _prepare_batch_inputs(self, batched_requests: List[Request]) -> Optional[Dict[str, Any]]:
+    def _prepare_batch_inputs(self, batched_requests: list[Request]) -> dict[str, Any] | None:
         """Prepares inputs for ShardedModel from a batch of requests.
         Args:
             batched_requests: A list of requests to prepare inputs for.
@@ -837,8 +836,8 @@ class Executor:
         if len(batched_requests) == 0:
             return None
 
-        prefill_reqs: List[Request] = []
-        decode_reqs: List[Request] = []
+        prefill_reqs: list[Request] = []
+        decode_reqs: list[Request] = []
         for req in batched_requests:
             if req.is_prefill:
                 prefill_reqs.append(req)
@@ -861,7 +860,7 @@ class Executor:
             "decode_batch": decode_batch,
         }
 
-    def _handle_raw_request(self, raw_request: Dict):
+    def _handle_raw_request(self, raw_request: dict):
         assert "messages" in raw_request, "Request did not contain messages"
 
         rid = raw_request["rid"]
@@ -916,7 +915,7 @@ class Executor:
             req.routing_table = raw_request["routing_table"]
         return req
 
-    def _notify_http_request_error(self, raw_request: Optional[Dict], error: Exception):
+    def _notify_http_request_error(self, raw_request: dict | None, error: Exception):
         """Best-effort notification to HTTP server when request parsing fails."""
         if not hasattr(self, "send_to_ipc_socket") or self.send_to_ipc_socket is None:
             return
@@ -944,7 +943,7 @@ class Executor:
         except Exception:  # pragma: no cover - best effort notification
             logger.debug("Failed to send error notification to HTTP handler", exc_info=True)
 
-    def _handle_cuda_input_requests(self, requests: List[Request]):
+    def _handle_cuda_input_requests(self, requests: list[Request]):
         """
         Cuda specialized handle function.
         The main difference is to remove all the kv cache operations.
@@ -1008,9 +1007,9 @@ class Executor:
         else:
             # Intermediate and Last peers receive IntermediateRequests from the previous peer.
             for req in requests:
-                assert isinstance(
-                    req, IntermediateRequest
-                ), "Non-first peers must receive IntermediateRequests."
+                assert isinstance(req, IntermediateRequest), (
+                    "Non-first peers must receive IntermediateRequests."
+                )
                 if req.is_finished or req.hidden_states is None:
                     self._release_and_evict_request(req.request_id)
                     if not self.is_last_peer:
@@ -1019,7 +1018,7 @@ class Executor:
                     # This is an active request, add it to the scheduler queue to be processed.
                     self.scheduler.enque_request(req)
 
-    def _handle_input_requests(self, requests: List[Request]):
+    def _handle_input_requests(self, requests: list[Request]):
         """Update requests states and status in scheduler and cache manager."""
         if self.tp_rank == 0 and not requests:
             return
@@ -1066,7 +1065,7 @@ class Executor:
                         logger.debug(
                             f"Released resources for finished request {req.request_id}, "
                             f"kv cache manager has {self.kv_cache_manager.tokens_in_cache} tokens, "
-                            f"memory usage: {mx.get_active_memory() / 1024**3 :.3f} GB"
+                            f"memory usage: {mx.get_active_memory() / 1024**3:.3f} GB"
                         )
                         if not self.is_last_peer:
                             self.finished_batch.append(req)
@@ -1092,9 +1091,9 @@ class Executor:
         else:
             # Intermediate and Last peers receive IntermediateRequests from the previous peer.
             for req in requests:
-                assert isinstance(
-                    req, IntermediateRequest
-                ), "Non-first peers must receive IntermediateRequests."
+                assert isinstance(req, IntermediateRequest), (
+                    "Non-first peers must receive IntermediateRequests."
+                )
                 if req.is_finished or req.hidden_states is None:
                     if self.enable_prefix_cache:
                         keys, values = self.kv_cache_manager.gather_kv_cache(req.request_id)
@@ -1105,7 +1104,7 @@ class Executor:
                     logger.debug(
                         f"Released resources for finished request {req.request_id}, "
                         f"kv cache manager has {self.kv_cache_manager.tokens_in_cache} tokens, "
-                        f"memory usage: {mx.get_active_memory() / 1024**3 :.3f} GB"
+                        f"memory usage: {mx.get_active_memory() / 1024**3:.3f} GB"
                     )
                     self.scheduler.evict_request(req.request_id)
                     if not self.is_last_peer:
@@ -1129,9 +1128,9 @@ class Executor:
         """
         # This peer is the last peer or a single node.
         if self.is_last_peer and self.is_first_peer:
-            assert isinstance(
-                request, (InitialRequest, IntermediateRequest)
-            ), "Invalid request type for decoding."
+            assert isinstance(request, (InitialRequest, IntermediateRequest)), (
+                "Invalid request type for decoding."
+            )
             if self.device == "cuda":
                 assert hidden_states.dtype in (
                     torch.int64,
@@ -1154,9 +1153,9 @@ class Executor:
         if self.is_last_peer:
             # Last peer decodes a token and sends it back to the first peer.
             # The token is wrapped in an IntermediateRequest.
-            assert isinstance(
-                request, IntermediateRequest
-            ), "Last peer must receive an IntermediateRequest."
+            assert isinstance(request, IntermediateRequest), (
+                "Last peer must receive an IntermediateRequest."
+            )
             if self.device == "cuda":
                 assert hidden_states.dtype in (
                     torch.int64,
@@ -1183,14 +1182,14 @@ class Executor:
             if request.is_finished:
                 hidden_states = None
             return IntermediateRequest.from_initial_request(request, hidden_states=hidden_states)
-        assert isinstance(
-            request, IntermediateRequest
-        ), "Intermediate peer must process an IntermediateRequest."
+        assert isinstance(request, IntermediateRequest), (
+            "Intermediate peer must process an IntermediateRequest."
+        )
         return IntermediateRequest.from_intermediate_request(request, hidden_states)
 
     def _prepare_next_batch_requests(
-        self, requests: List[Request], hidden_states: Any, lengths: Any
-    ) -> List[Request]:
+        self, requests: list[Request], hidden_states: Any, lengths: Any
+    ) -> list[Request]:
         """Prepares a batch of requests for the next stage of the pipeline."""
         if self.tp_rank == 0:
             batched_requests = []
@@ -1225,25 +1224,25 @@ class Executor:
         return batched_requests
 
     def _process_batch_cuda(
-        self, prepared_inputs: Dict[str, Any], return_decoded_tokens: bool = True
+        self, prepared_inputs: dict[str, Any], return_decoded_tokens: bool = True
     ):
         """
         Process a batch of requests in CUDA, supports both vLLM and SGLang backends.
         """
         if self.backend_type == "vllm":
             # ========== vLLM Backend ==========
-            assert (
-                "scheduler_output" in prepared_inputs
-            ), "scheduler_output should be provided for vLLM backend"
-            assert (
-                "pp_proxy_tensors" in prepared_inputs
-            ), "pp_proxy_tensors should be in cuda prepared inputs"
+            assert "scheduler_output" in prepared_inputs, (
+                "scheduler_output should be provided for vLLM backend"
+            )
+            assert "pp_proxy_tensors" in prepared_inputs, (
+                "pp_proxy_tensors should be in cuda prepared inputs"
+            )
             scheduler_output = prepared_inputs["scheduler_output"]
             pp_proxy_tensors = prepared_inputs["pp_proxy_tensors"]
             # For vLLM, pp_proxy_tensors is already an IntermediateTensors object
             intermediate_tensors = pp_proxy_tensors if pp_proxy_tensors is not None else None
             if intermediate_tensors is not None:
-                logger.debug(f"vLLM: Using intermediate_tensors for PP (non-first peer)")
+                logger.debug("vLLM: Using intermediate_tensors for PP (non-first peer)")
 
             # Import IntermediateTensors for type checking
 
@@ -1275,12 +1274,12 @@ class Executor:
 
         else:  # self.backend_type == "sglang"
             # ========== SGLang Backend ==========
-            assert (
-                "forward_batch" in prepared_inputs
-            ), "forward_batch should be in cuda prepared inputs"
-            assert (
-                "pp_proxy_tensors" in prepared_inputs
-            ), "pp_proxy_tensors should be in cuda prepared inputs"
+            assert "forward_batch" in prepared_inputs, (
+                "forward_batch should be in cuda prepared inputs"
+            )
+            assert "pp_proxy_tensors" in prepared_inputs, (
+                "pp_proxy_tensors should be in cuda prepared inputs"
+            )
 
             forward_batch = prepared_inputs["forward_batch"]
             pp_proxy_tensors = prepared_inputs["pp_proxy_tensors"]
@@ -1317,7 +1316,7 @@ class Executor:
                 return final_hidden_states
 
     def _process_batch_mlx(
-        self, prepared_inputs: Dict[str, Any], return_decoded_tokens: bool = True
+        self, prepared_inputs: dict[str, Any], return_decoded_tokens: bool = True
     ):
         """
         Process a batch of requests in MLX.
@@ -1340,9 +1339,10 @@ class Executor:
                 mask=prepared_inputs["mask"],
                 using_state_cache=self.using_state_cache,
             )
-            states0, states1 = [None for _ in range(len(k_caches))], [
-                None for _ in range(len(k_caches))
-            ]
+            states0, states1 = (
+                [None for _ in range(len(k_caches))],
+                [None for _ in range(len(k_caches))],
+            )
         # k_caches shape: (num_layers, B, num_kv_heads, L_padded, head_dim)
         logger.debug(
             f"Processing batch with {len(prepared_inputs['requests'])} requests, "
@@ -1382,7 +1382,7 @@ class Executor:
         return hidden_states
 
     def process_batch(
-        self, prepared_inputs: Dict[str, Any], return_decoded_tokens: bool = True
+        self, prepared_inputs: dict[str, Any], return_decoded_tokens: bool = True
     ) -> mx.array:
         """
         Process a batch of requests.

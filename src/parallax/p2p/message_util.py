@@ -1,4 +1,4 @@
-﻿"""
+"""
 Utility functions for message serialization and deserialization.
 
 This module contains utility functions for serializing and deserializing messages
@@ -6,7 +6,7 @@ between the P2P server and the executor.
 """
 
 import io
-from typing import Any, List, Optional
+from typing import Any
 
 import mlx.core as mx
 
@@ -16,8 +16,8 @@ from parallax.server.sampling.sampling_params import SamplingParams
 
 
 def request_to_proto(
-    requests: List[IntermediateRequest],
-    device: Optional[str] = "mlx",
+    requests: list[IntermediateRequest],
+    device: str | None = "mlx",
 ) -> forward_pb2.ForwardRequest:
     """
     Convert a list of IntermediateRequest objects to a ForwardRequest protobuf message.
@@ -25,9 +25,9 @@ def request_to_proto(
     """
     forward_request = forward_pb2.ForwardRequest()
     assert len(requests) > 0, "No requests to convert"
-    assert all(
-        request.status == requests[0].status for request in requests
-    ), "All requests must have the same status"
+    assert all(request.status == requests[0].status for request in requests), (
+        "All requests must have the same status"
+    )
     if requests[0].status == RequestStatus.PREFILLING:
         forward_request.forward_mode = forward_pb2.ForwardMode.EXTEND
     elif requests[0].status == RequestStatus.DECODING:
@@ -56,8 +56,8 @@ def request_to_proto(
 
 def proto_to_request(
     proto_request: forward_pb2.ForwardRequest,
-    device: Optional[str] = "mlx",
-) -> List[IntermediateRequest]:
+    device: str | None = "mlx",
+) -> list[IntermediateRequest]:
     """
     Convert a ForwardRequest protobuf message to a IntermediateRequest object.
     """
@@ -101,7 +101,7 @@ def proto_to_request(
     return requests
 
 
-def abort_request_to_proto(reqs: List[Request]) -> forward_pb2.AbortRequest:
+def abort_request_to_proto(reqs: list[Request]) -> forward_pb2.AbortRequest:
     """Converts aborted/finished requests to a AbortRequest"""
     proto = forward_pb2.AbortRequest()
     for req in reqs:
@@ -113,7 +113,7 @@ def abort_request_to_proto(reqs: List[Request]) -> forward_pb2.AbortRequest:
     return proto
 
 
-def proto_to_abort_request(proto_request: forward_pb2.AbortRequest) -> List[IntermediateRequest]:
+def proto_to_abort_request(proto_request: forward_pb2.AbortRequest) -> list[IntermediateRequest]:
     """
     Converts a AbortRequest a list of IntermediateRequest objects.
     Only request_id and routing table are useful information.
@@ -178,7 +178,7 @@ def sampling_params_to_proto(params: SamplingParams) -> forward_pb2.SamplingPara
     return proto
 
 
-def tensor_to_bytes(tensor: Any, device: Optional[str] = "mlx") -> bytes:
+def tensor_to_bytes(tensor: Any, device: str | None = "mlx") -> bytes:
     """Convert tensor to protobuf Tensor using safetensor serialization."""
     if device == "cuda":
         from safetensors.torch import save
@@ -200,7 +200,7 @@ def tensor_to_bytes(tensor: Any, device: Optional[str] = "mlx") -> bytes:
 
 def bytes_to_tensor(
     tensor: bytes,
-    device: Optional[str] = "mlx",
+    device: str | None = "mlx",
 ) -> Any:
     """Convert bytes (safetensor format) to tensor."""
     if device == "cuda":

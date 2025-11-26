@@ -1,6 +1,5 @@
 import threading
 import time
-from typing import List
 
 from lattica import Lattica
 
@@ -12,6 +11,7 @@ from parallax.p2p.server import TransformerConnectionHandler
 from parallax_utils.logging_config import get_logger
 from scheduling.node import RequestSignal
 from scheduling.scheduler import Scheduler
+
 
 logger = get_logger(__name__)
 
@@ -26,11 +26,11 @@ class SchedulerManage:
 
     def __init__(
         self,
-        initial_peers: List[str] = [],
-        relay_servers: List[str] = [],
+        initial_peers: list[str] = [],
+        relay_servers: list[str] = [],
         dht_prefix: str = "gradient",
-        host_maddrs: List[str] = [],
-        announce_maddrs: List[str] = [],
+        host_maddrs: list[str] = [],
+        announce_maddrs: list[str] = [],
         http_port: int = 3001,
         use_hfcache: bool = False,
     ):

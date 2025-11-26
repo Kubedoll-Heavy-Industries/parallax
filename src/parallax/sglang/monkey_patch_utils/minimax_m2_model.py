@@ -1,7 +1,7 @@
 ## This is a patch file for sglang MiniMax M2 model to support pipeline parallelism
 
 import logging
-from typing import Iterable, Optional, Set, Tuple
+from typing import Iterable
 
 import torch
 from sglang.srt.distributed import get_pp_group
@@ -14,10 +14,11 @@ from sglang.srt.model_loader.weight_utils import (
 )
 from sglang.srt.models.minimax_m2 import get_spec_layer_idx_from_weight_name
 
+
 logger = logging.getLogger(__name__)
 
 
-def monkey_patch_load_weights(self, weights: Iterable[Tuple[str, torch.Tensor]]):
+def monkey_patch_load_weights(self, weights: Iterable[tuple[str, torch.Tensor]]):
     """Load model weights with proper mapping for MiniMax architecture."""
 
     stacked_params_mapping = [
@@ -39,7 +40,7 @@ def monkey_patch_load_weights(self, weights: Iterable[Tuple[str, torch.Tensor]])
     )
 
     params_dict = dict(self.named_parameters())
-    loaded_params: Set[str] = set()
+    loaded_params: set[str] = set()
     for name, loaded_weight in weights:
         if "lm_head" in name:
             pp_group = getattr(self, "pp_group", None) or get_pp_group()
@@ -131,8 +132,8 @@ def apply_minimax_m2_monkey_patch():
         input_ids: torch.Tensor,
         positions: torch.Tensor,
         forward_batch,
-        inputs_embeds: Optional[torch.Tensor] = None,
-        pp_proxy_tensors: Optional[PPProxyTensors] = None,
+        inputs_embeds: torch.Tensor | None = None,
+        pp_proxy_tensors: PPProxyTensors | None = None,
         **kwargs,
     ):
         hidden_states = self.model(

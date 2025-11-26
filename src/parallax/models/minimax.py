@@ -1,7 +1,7 @@
 # Copyright © 2025 Apple Inc.
 
 from dataclasses import dataclass
-from typing import Any, Optional, Tuple
+from typing import Any
 
 import mlx.core as mx
 import mlx.nn as nn
@@ -27,7 +27,7 @@ class ModelArgs(BaseModelArgs):
     vocab_size: int
     tie_word_embeddings: bool = False
     scoring_func: str = "sigmoid"
-    head_dim: Optional[int] = None
+    head_dim: int | None = None
     use_qk_norm: bool = True
 
 
@@ -57,8 +57,8 @@ class MLXMiniMaxAttention(nn.Module):
     def __call__(
         self,
         x: mx.array,
-        mask: Optional[mx.array] = None,
-        cache: Optional[Any] = None,
+        mask: mx.array | None = None,
+        cache: Any | None = None,
     ) -> mx.array:
         B, L, D = x.shape
 
@@ -133,8 +133,8 @@ class MLXMiniMaxBlock(nn.Module):
     def __call__(
         self,
         x: mx.array,
-        mask: Optional[mx.array] = None,
-        cache: Optional[Any] = None,
+        mask: mx.array | None = None,
+        cache: Any | None = None,
     ) -> mx.array:
         r = x + self.self_attn(self.input_layernorm(x), mask, cache)
         r = r + self.block_sparse_moe(self.post_attention_layernorm(r))
@@ -142,16 +142,14 @@ class MLXMiniMaxBlock(nn.Module):
 
 
 class ParallaxMiniMaxAttention(MLXMiniMaxAttention):
-
     def __call__(
         self,
         x: mx.array,
-        mask: Optional[mx.array] = None,
-        cache: Optional[Tuple[mx.array, mx.array]] = None,
+        mask: mx.array | None = None,
+        cache: tuple[mx.array, mx.array] | None = None,
         offset: int = 0,
-        lengths: Optional[mx.array] = None,
-    ) -> Tuple[mx.array, Tuple[mx.array, mx.array]]:
-
+        lengths: mx.array | None = None,
+    ) -> tuple[mx.array, tuple[mx.array, mx.array]]:
         batch, target_len, _ = x.shape
 
         queries = self.q_proj(x)
@@ -215,10 +213,10 @@ class ParallaxMiniMaxBlock(MLXMiniMaxBlock):
     def __call__(
         self,
         x: mx.array,
-        mask: Optional[mx.array] = None,
-        cache: Optional[Tuple[mx.array, mx.array]] = None,
+        mask: mx.array | None = None,
+        cache: tuple[mx.array, mx.array] | None = None,
         offset: int = 0,
-        lengths: Optional[mx.array] = None,
+        lengths: mx.array | None = None,
     ):
         r, (k_cache, v_cache) = self.self_attn(self.input_layernorm(x), mask, cache, offset=offset)
         h = x + r

@@ -6,6 +6,7 @@ from parallax_utils.logging_config import get_logger
 from scheduling.node import Node, NodeHardwareInfo
 from scheduling.scheduler import Scheduler
 
+
 logger = get_logger(__name__)
 
 import json
@@ -169,15 +170,15 @@ class RPCConnectionHandler(ConnectionHandler):
             is_active=node_json.get("is_active", True),
             manual_layer_assignment=node_json.get("manual_layer_assignment", False),
         )
-        if node_json.get("start_layer", None) is not None:
+        if node_json.get("start_layer") is not None:
             node.start_layer = node_json.get("start_layer")
-        if node_json.get("end_layer", None) is not None:
+        if node_json.get("end_layer") is not None:
             node.end_layer = node_json.get("end_layer")
-        if node_json.get("current_requests", None) is not None:
+        if node_json.get("current_requests") is not None:
             node.current_requests = node_json.get("current_requests")
-        if node_json.get("layer_latency_ms", None) is not None:
+        if node_json.get("layer_latency_ms") is not None:
             node.avg_layer_latency_ms = node_json.get("layer_latency_ms")
-        if node_json.get("rtt_to_nodes", None) is not None:
+        if node_json.get("rtt_to_nodes") is not None:
             node.rtt_to_nodes = node_json.get("rtt_to_nodes")
         return node
 

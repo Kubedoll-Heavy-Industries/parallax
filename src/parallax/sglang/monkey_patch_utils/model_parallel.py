@@ -18,7 +18,7 @@ when upstream sglang provides native support.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import sglang
 import sglang.srt.distributed.parallel_state
@@ -36,6 +36,7 @@ from sglang.srt.utils import (
 )
 from torch.distributed import Backend
 
+
 # from parallax.sglang.monkey_patch.model_runner import ModelRunner as SGLModelRunner
 
 logger = logging.getLogger(__name__)
@@ -52,9 +53,9 @@ class ParallaxGroupCoordinator(SGLGroupCoordinator):
 
     def __init__(
         self,
-        group_ranks: List[List[int]],
+        group_ranks: list[list[int]],
         local_rank: int,
-        torch_distributed_backend: Union[str, Backend],
+        torch_distributed_backend: str | Backend,
         use_pynccl: bool,
         use_pymscclpp: bool,
         use_custom_allreduce: bool,
@@ -63,7 +64,7 @@ class ParallaxGroupCoordinator(SGLGroupCoordinator):
         use_npu_communicator: bool,
         use_torch_symm_mem: bool = False,
         use_message_queue_broadcaster: bool = False,
-        group_name: Optional[str] = None,
+        group_name: str | None = None,
         pp_start_layer: int = 0,
         pp_end_layer: int = 0,
         hidden_layers: int = 0,
@@ -99,13 +100,13 @@ class ParallaxGroupCoordinator(SGLGroupCoordinator):
 
 
 def monkey_patch_init_model_parallel_group(
-    group_ranks: List[List[int]],
+    group_ranks: list[list[int]],
     local_rank: int,
     backend: str,
-    use_custom_allreduce: Optional[bool] = None,
+    use_custom_allreduce: bool | None = None,
     use_message_queue_broadcaster: bool = False,
-    group_name: Optional[str] = None,
-    use_mscclpp_allreduce: Optional[bool] = None,
+    group_name: str | None = None,
+    use_mscclpp_allreduce: bool | None = None,
     pp_start_layer: int = 0,
     pp_end_layer: int = 0,
     hidden_layers: int = 0,
@@ -137,7 +138,7 @@ def monkey_patch_initialize_model_parallel(
     tensor_model_parallel_size: int = 1,
     expert_model_parallel_size: int = 1,
     pipeline_model_parallel_size: int = 1,
-    backend: Optional[str] = None,
+    backend: str | None = None,
     duplicate_tp_group: bool = False,
     pp_start_layer: int = 0,
     pp_end_layer: int = 0,
@@ -186,9 +187,9 @@ def monkey_patch_initialize_model_parallel(
 
     if duplicate_tp_group:
         global _PDMUX_PREFILL_TP_GROUP
-        assert (
-            _PDMUX_PREFILL_TP_GROUP is None
-        ), "tensor model parallel group for PD-Multiplexing Prefill is already initialized"
+        assert _PDMUX_PREFILL_TP_GROUP is None, (
+            "tensor model parallel group for PD-Multiplexing Prefill is already initialized"
+        )
         _PDMUX_PREFILL_TP_GROUP = sglang.srt.distributed.parallel_state.init_model_parallel_group(
             group_ranks,
             get_world_group().local_rank,
@@ -288,12 +289,12 @@ def monkey_patch_initialize_model_parallel(
 def monkey_patch_make_layers(
     num_hidden_layers: int,
     layer_fn: LayerFn,
-    pp_rank: Optional[int] = None,
-    pp_size: Optional[int] = None,
+    pp_rank: int | None = None,
+    pp_size: int | None = None,
     prefix: str = "",
     return_tuple: bool = True,
-    offloader_kwargs: Dict[str, Any] = {},
-) -> Tuple[int, int, torch.nn.ModuleList]:
+    offloader_kwargs: dict[str, Any] = {},
+) -> tuple[int, int, torch.nn.ModuleList]:
     """A monkey patch to replace sglang.srt.utils.make_layers"""
     # circula imports
     from sglang.srt.distributed import get_pp_group

@@ -16,8 +16,7 @@ from scheduling.request_routing import (
     RoundRobinPipelineRouting,
 )
 
-from .test_utils import build_model_info as build_model
-from .test_utils import build_node, set_rtt_from_coords
+from .test_utils import build_model_info as build_model, build_node, set_rtt_from_coords
 
 
 def test_optimal_path_simple_chain():

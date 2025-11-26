@@ -1,10 +1,11 @@
 import logging
-from typing import Iterable, Optional, Set, Tuple
+from typing import Iterable
 
 from sglang.srt.configs.qwen3_next import Qwen3NextConfig
 from sglang.srt.layers.quantization.base_config import QuantizationConfig
 from sglang.srt.utils import is_cuda
 from torch import nn
+
 
 logger = logging.getLogger(__name__)
 _is_cuda = is_cuda()
@@ -45,7 +46,7 @@ def apply_qwen3_next_monkey_patch():
 
     # --- Patch Qwen3NextModel.__init__ ---
     def _pp_model_init(
-        self, config, quant_config: Optional[QuantizationConfig] = None, prefix: str = ""
+        self, config, quant_config: QuantizationConfig | None = None, prefix: str = ""
     ):
         nn.Module.__init__(self)
         self.config = config
@@ -91,8 +92,8 @@ def apply_qwen3_next_monkey_patch():
         input_ids: torch.Tensor,
         positions: torch.Tensor,
         forward_batch,
-        inputs_embeds: Optional[torch.Tensor] = None,
-        pp_proxy_tensors: Optional[PPProxyTensors] = None,
+        inputs_embeds: torch.Tensor | None = None,
+        pp_proxy_tensors: PPProxyTensors | None = None,
         **kwargs,
     ):
         if self.pp_group.is_first_rank:
@@ -101,9 +102,9 @@ def apply_qwen3_next_monkey_patch():
             )
             residual = None
         else:
-            assert (
-                pp_proxy_tensors is not None
-            ), "pp_proxy_tensors must be provided on non-first PP ranks"
+            assert pp_proxy_tensors is not None, (
+                "pp_proxy_tensors must be provided on non-first PP ranks"
+            )
             hidden_states = pp_proxy_tensors["hidden_states"]
             residual = pp_proxy_tensors["residual"]
 
@@ -131,7 +132,7 @@ def apply_qwen3_next_monkey_patch():
     def _pp_for_causal_init(
         self,
         config: Qwen3NextConfig,
-        quant_config: Optional[QuantizationConfig] = None,
+        quant_config: QuantizationConfig | None = None,
         prefix: str = "",
     ):
         nn.Module.__init__(self)
@@ -156,8 +157,8 @@ def apply_qwen3_next_monkey_patch():
         input_ids: torch.Tensor,
         positions: torch.Tensor,
         forward_batch,
-        inputs_embeds: Optional[torch.Tensor] = None,
-        pp_proxy_tensors: Optional[PPProxyTensors] = None,
+        inputs_embeds: torch.Tensor | None = None,
+        pp_proxy_tensors: PPProxyTensors | None = None,
         **kwargs,
     ):
         hidden_states = self.model(
@@ -176,8 +177,8 @@ def apply_qwen3_next_monkey_patch():
     orig_load_weights = m.Qwen3NextForCausalLM.load_weights
 
     def _pp_load_weights(
-        self, weights: Iterable[Tuple[str, torch.Tensor]], is_mtp: bool = False
-    ) -> Set[str]:
+        self, weights: Iterable[tuple[str, torch.Tensor]], is_mtp: bool = False
+    ) -> set[str]:
         """Filter incoming weights to only those relevant for this PP slice.
 
         Rules:

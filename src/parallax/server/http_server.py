@@ -22,7 +22,6 @@ import traceback
 import uuid
 from dataclasses import dataclass, field
 from http import HTTPStatus
-from typing import Dict, Optional
 
 import fastapi
 import uvicorn
@@ -38,6 +37,7 @@ from parallax.utils.selective_download import download_metadata_only
 from parallax.utils.tokenizer_utils import load_detokenizer, load_tokenizer
 from parallax.utils.utils import get_zmq_socket
 from parallax_utils.logging_config import get_logger
+
 
 logger = get_logger(__name__)
 
@@ -82,10 +82,10 @@ class HTTPRequestInfo:
     # helper
     is_finish: bool = False
     # Queue for streaming tokens one by one
-    token_queue: Optional[asyncio.Queue] = field(default=None, repr=False)
+    token_queue: asyncio.Queue | None = field(default=None, repr=False)
     detokenizer: StreamingDetokenizer = None
-    error_message: Optional[str] = None
-    error_type: Optional[str] = None
+    error_message: str | None = None
+    error_type: str | None = None
     error_status: HTTPStatus = HTTPStatus.INTERNAL_SERVER_ERROR
 
 
@@ -107,7 +107,7 @@ class HTTPHandler:
         context = zmq.asyncio.Context(2)
         self.send_to_executor = get_zmq_socket(context, zmq.PUSH, executor_input_ipc_name, True)
         self.recv_from_executor = get_zmq_socket(context, zmq.PULL, executor_output_ipc_name, True)
-        self.processing_requests: Dict[str, HTTPRequestInfo] = {}
+        self.processing_requests: dict[str, HTTPRequestInfo] = {}
 
         # Load tokenizer for separate detokenizers.
         # Important: avoid triggering full weight downloads here.
@@ -123,7 +123,7 @@ class HTTPHandler:
         self.tokenizer = load_tokenizer(model_path, eos_token_ids=config.get("eos_token_id", None))
         self.detokenizer_class, self.tokenmap = load_detokenizer(model_path, self.tokenizer)
 
-    def create_request(self, request: Dict):
+    def create_request(self, request: dict):
         """Creates a new request information"""
         rid = request["rid"]
         stream = request.get("stream", False)
@@ -149,7 +149,7 @@ class HTTPHandler:
         """Releases the request resources"""
         del self.processing_requests[rid]
 
-    def send_request(self, request: Dict):
+    def send_request(self, request: dict):
         """Sends the request to model executor using IPC."""
         self.send_to_executor.send_pyobj(request)
 
@@ -216,7 +216,7 @@ class HTTPHandler:
         response_json = json.dumps(response, separators=(",", ":"))
         return f"data: {response_json}\n\n".encode()
 
-    def _generate_error_stream_chunk(self, rid, error_payload: Dict[str, str]):
+    def _generate_error_stream_chunk(self, rid, error_payload: dict[str, str]):
         """Generates a SSE chunk representing an error."""
         request_info = self.processing_requests[rid]
         response = {
@@ -282,7 +282,7 @@ class HTTPHandler:
         }
         return response
 
-    async def _handle_executor_error(self, rid: str, recv_dict: Dict):
+    async def _handle_executor_error(self, rid: str, recv_dict: dict):
         """Handles error notifications sent from the executor process."""
         request_info = self.processing_requests.get(rid)
         if request_info is None:
@@ -371,7 +371,7 @@ class ErrorResponse(BaseModel):
     object: str = "error"
     message: str
     type: str
-    param: Optional[str] = None
+    param: str | None = None
     code: int
 
 

@@ -1,5 +1,3 @@
-from typing import Optional
-
 import torch
 from sglang.srt.layers.attention.triton_backend import TritonAttnBackend
 from sglang.srt.layers.dp_attention import get_attention_tp_size
@@ -11,7 +9,7 @@ def parallax_triton_backend_init(
     self,
     model_runner: ModelRunner,
     skip_prefill: bool = False,
-    kv_indptr_buf: Optional[torch.Tensor] = None,
+    kv_indptr_buf: torch.Tensor | None = None,
 ):
     # Lazy import to avoid the initialization of cuda context
     from sglang.srt.layers.attention.triton_ops.decode_attention import (
@@ -39,7 +37,6 @@ def parallax_triton_backend_init(
         # For hybrid linear models, layer_id = 0 may not be full attention
         self.v_head_dim = model_runner.token_to_kv_pool.get_v_head_dim()
     else:
-
         ################################################################################
         ## Patch for PP: get pp_start_layer
         self.v_head_dim = model_runner.token_to_kv_pool.get_value_buffer(

@@ -2,7 +2,6 @@
 
 import random
 import socket
-from typing import List
 
 import mlx.core as mx
 import numpy as np
@@ -104,7 +103,7 @@ def get_infinite_value_by_dtype(dtype: mx.Dtype):
 
 
 def pad_prefix_caches(
-    cache: List, input_lengths: List, dtype: mx.Dtype = mx.bfloat16
+    cache: list, input_lengths: list, dtype: mx.Dtype = mx.bfloat16
 ) -> tuple[mx.array, mx.array]:
     """
     Pads prefix kv caches.
@@ -146,7 +145,7 @@ def pad_prefix_caches(
 
 
 def pad_inputs(
-    pad_value: int, inputs: List, dtype: mx.Dtype = mx.bfloat16
+    pad_value: int, inputs: list, dtype: mx.Dtype = mx.bfloat16
 ) -> tuple[mx.array, mx.array]:
     """
     Pads a list of sequences (token ID lists or hidden state arrays) to the same length.
@@ -237,9 +236,9 @@ def create_causal_mask(seq_len: int, total_len: int, dtype=mx.bfloat16) -> mx.ar
     Returns:
         mx.array: A square matrix with -1e9 on the upper triangle (excluding the diagonal).
     """
-    assert (
-        total_len >= seq_len
-    ), f"Total lengths {total_len} should be no less than input sequence {seq_len}."
+    assert total_len >= seq_len, (
+        f"Total lengths {total_len} should be no less than input sequence {seq_len}."
+    )
     inf_value = get_infinite_value_by_dtype(dtype)
     mask = mx.triu(mx.full((seq_len, seq_len), -inf_value, dtype), k=1)
     if total_len == seq_len:
@@ -289,7 +288,7 @@ def is_port_available(port: int):
             s.bind(("", port))
             s.listen(1)
             return True
-        except socket.error:
+        except OSError:
             return False
         except OverflowError:
             return False

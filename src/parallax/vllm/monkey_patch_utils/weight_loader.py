@@ -6,6 +6,7 @@ This is similar to the approach used in sglang monkey patches.
 import logging
 from typing import Any
 
+
 logger = logging.getLogger(__name__)
 
 _vllm_patch_applied = False

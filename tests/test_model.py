@@ -14,6 +14,7 @@ from parallax.server.shard_loader import MLXModelLoader
 from parallax.utils.tokenizer_utils import load_tokenizer
 from parallax.utils.utils import pad_inputs
 
+
 REPO_ID = "mlx-community/Qwen3-0.6B-bf16"
 TOTAL_LAYERS = 28
 
@@ -30,7 +31,7 @@ ref_tokenizer = load_tokenizer(model_path, eos_token_ids=ref_config.get("eos_tok
         [(0, 8), (8, 16), (16, TOTAL_LAYERS)],
     ],
 )
-def test_shard_prefill(layers_config: List[Tuple[int, int]]) -> None:
+def test_shard_prefill(layers_config: list[tuple[int, int]]) -> None:
     """Load sharded model based on layers_config and
 
     compare its forward pass with a full reference model.
