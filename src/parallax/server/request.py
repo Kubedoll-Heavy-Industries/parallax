@@ -60,10 +60,11 @@ TODO:
 
 import uuid
 from enum import Enum
-from typing import Any, List, Optional
+from typing import Any
 
 from parallax.server.sampling.sampling_params import SamplingParams
 from parallax_utils.logging_config import get_logger
+
 
 logger = get_logger(__name__)
 
@@ -87,13 +88,13 @@ class Request:
 
     def __init__(
         self,
-        request_id: Optional[str] = None,
+        request_id: str | None = None,
         status: RequestStatus = RequestStatus.PREFILLING,
         prompt_len: int = 0,
-        input_ids: Optional[List[int]] = None,
-        output_ids: Optional[List[int]] = None,
-        routing_table: Optional[List[str]] = [],
-        sampling_params: Optional[SamplingParams] = None,
+        input_ids: list[int] | None = None,
+        output_ids: list[int] | None = None,
+        routing_table: list[str] | None = [],
+        sampling_params: SamplingParams | None = None,
     ):
         self.request_id = request_id or str(uuid.uuid4())
         self.status = status
@@ -104,7 +105,7 @@ class Request:
         self.sampling_params = sampling_params or SamplingParams()
         self.abort = False
         self.ready_for_next_step = False
-        self.last_updated_time: Optional[float] = None
+        self.last_updated_time: float | None = None
 
     @property
     def is_finished(self) -> bool:
@@ -146,11 +147,11 @@ class InitialRequest(Request):
 
     def __init__(
         self,
-        prompt: Optional[str] = None,
-        request_id: Optional[str] = None,
-        output_ids: Optional[List[int]] = None,
-        input_ids: Optional[List[int]] = None,
-        sampling_params: Optional[SamplingParams] = None,
+        prompt: str | None = None,
+        request_id: str | None = None,
+        output_ids: list[int] | None = None,
+        input_ids: list[int] | None = None,
+        sampling_params: SamplingParams | None = None,
         max_new_tokens: int = 512,
         max_total_length: int = 1024,
         status: RequestStatus = RequestStatus.PREFILLING,
@@ -193,7 +194,7 @@ class InitialRequest(Request):
         """Total length of the sequence (input + output)."""
         return self.prompt_len + self.output_length
 
-    def get_model_input_for_first_peer(self) -> List[int]:
+    def get_model_input_for_first_peer(self) -> list[int]:
         """
         Returns the token IDs the First Peer's model should process for the current step.
         """
@@ -224,7 +225,7 @@ class InitialRequest(Request):
     @classmethod
     def from_prompt_ids(
         cls,
-        prompt_ids: List[int],
+        prompt_ids: list[int],
         max_new_tokens: int,
         max_total_length: int,
     ) -> "InitialRequest":
@@ -251,11 +252,11 @@ class IntermediateRequest(Request):
         request_id: str,
         current_position: int,
         status: RequestStatus = RequestStatus.PREFILLING,
-        input_ids: Optional[List[int]] = None,
-        hidden_states: Optional[Any] = None,
-        next_token_id: Optional[int] = None,
-        routing_table: Optional[List[str]] = [],
-        sampling_params: Optional[SamplingParams] = None,
+        input_ids: list[int] | None = None,
+        hidden_states: Any | None = None,
+        next_token_id: int | None = None,
+        routing_table: list[str] | None = [],
+        sampling_params: SamplingParams | None = None,
     ):
         super().__init__(
             request_id=request_id,
@@ -290,7 +291,7 @@ class IntermediateRequest(Request):
 
     @classmethod
     def from_initial_request(
-        cls, initial_request: InitialRequest, hidden_states: Optional[Any] = None
+        cls, initial_request: InitialRequest, hidden_states: Any | None = None
     ) -> "IntermediateRequest":
         """Convert an InitialRequest to an IntermediateRequest.
 

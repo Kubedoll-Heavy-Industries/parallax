@@ -2,6 +2,7 @@ from parallax.server.node_chat_http_server import run_node_chat_http_server
 from parallax.server.server_args import parse_args
 from parallax_utils.logging_config import get_logger, set_log_level
 
+
 logger = get_logger(__name__)
 
 if __name__ == "__main__":

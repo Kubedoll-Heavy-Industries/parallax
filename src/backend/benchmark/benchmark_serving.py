@@ -39,7 +39,7 @@ from argparse import ArgumentParser as FlexibleArgumentParser
 from dataclasses import dataclass
 from datetime import datetime
 from json import JSONDecodeError
-from typing import Any, AsyncGenerator, Collection, Dict, List, Optional, Tuple
+from typing import Any, AsyncGenerator, Collection
 
 import numpy as np
 import requests
@@ -53,6 +53,7 @@ from datasets import load_dataset
 from PIL.Image import Image
 from tqdm.asyncio import tqdm
 from transformers import PreTrainedTokenizerBase
+
 
 MILLISECONDS_TO_SECONDS_CONVERSION = 1000
 
@@ -73,7 +74,7 @@ def is_file_valid_json(path):
         return False
 
 
-def download_and_cache_file(url: str, filename: Optional[str] = None):
+def download_and_cache_file(url: str, filename: str | None = None):
     """Read and cache a file from a url."""
     if filename is None:
         filename = os.path.join("/tmp", url.split("/")[-1])
@@ -122,30 +123,30 @@ class BenchmarkMetrics:
     mean_ttft_ms: float
     median_ttft_ms: float
     std_ttft_ms: float
-    percentiles_ttft_ms: List[Tuple[float, float]]
+    percentiles_ttft_ms: list[tuple[float, float]]
     mean_tpot_ms: float
     median_tpot_ms: float
     std_tpot_ms: float
-    percentiles_tpot_ms: List[Tuple[float, float]]
+    percentiles_tpot_ms: list[tuple[float, float]]
     mean_itl_ms: float
     median_itl_ms: float
     std_itl_ms: float
-    percentiles_itl_ms: List[Tuple[float, float]]
+    percentiles_itl_ms: list[tuple[float, float]]
     # E2EL stands for end-to-end latency per request.
     # It is the time taken on the client side from sending
     # a request to receiving a complete response.
     mean_e2el_ms: float
     median_e2el_ms: float
     std_e2el_ms: float
-    percentiles_e2el_ms: List[Tuple[float, float]]
+    percentiles_e2el_ms: list[tuple[float, float]]
 
 
 def sample_sharegpt_requests(
     dataset_path: str,
     num_requests: int,
     tokenizer: PreTrainedTokenizerBase,
-    fixed_output_len: Optional[int] = None,
-) -> List[Tuple[str, int, int, None]]:
+    fixed_output_len: int | None = None,
+) -> list[tuple[str, int, int, None]]:
     # Load the dataset.
     with open(dataset_path, encoding="utf-8") as f:
         dataset = json.load(f)
@@ -160,7 +161,7 @@ def sample_sharegpt_requests(
     random.shuffle(dataset)
 
     # Filter out sequences that are too long or too short
-    filtered_dataset: List[Tuple[str, int, int]] = []
+    filtered_dataset: list[tuple[str, int, int]] = []
     for i in range(len(dataset)):
         if len(filtered_dataset) == num_requests:
             break
@@ -188,12 +189,12 @@ def sample_wildchat_requests(
     num_requests: int,
     tokenizer: PreTrainedTokenizerBase,
     random_seed: int,
-    fixed_output_len: Optional[int] = None,
-) -> List[Tuple[str, int, int, None]]:
+    fixed_output_len: int | None = None,
+) -> list[tuple[str, int, int, None]]:
     dataset = load_dataset(dataset_path, split="train")
     filter_func = lambda x: len(x["conversation"]) >= 2
     filtered_dataset = dataset.shuffle(seed=random_seed).filter(filter_func)
-    sampled_requests: List[Tuple[str, int, int, Dict[str, Collection[str]]]] = []
+    sampled_requests: list[tuple[str, int, int, dict[str, Collection[str]]]] = []
     for data in filtered_dataset:
         if len(sampled_requests) == num_requests:
             break
@@ -221,19 +222,18 @@ def sample_wildchat_requests(
 
 def sample_hf_requests(
     dataset_path: str,
-    dataset_subset: Optional[str],
+    dataset_subset: str | None,
     dataset_split: str,
     num_requests: int,
     tokenizer: PreTrainedTokenizerBase,
     random_seed: int,
-    fixed_output_len: Optional[int] = None,
-) -> List[Tuple[str, str, int, Optional[Dict[str, Collection[str]]]]]:
-
+    fixed_output_len: int | None = None,
+) -> list[tuple[str, str, int, dict[str, Collection[str]] | None]]:
     dataset = load_dataset(dataset_path, name=dataset_subset, split=dataset_split, streaming=True)
     assert "conversations" in dataset.features, "HF Dataset must have 'conversations' column."
     filter_func = lambda x: len(x["conversations"]) >= 2
     filtered_dataset = dataset.shuffle(seed=random_seed).filter(filter_func)
-    sampled_requests: List[Tuple[str, int, int, Dict[str, Collection[str]]]] = []
+    sampled_requests: list[tuple[str, int, int, dict[str, Collection[str]]]] = []
     for data in filtered_dataset:
         if len(sampled_requests) == num_requests:
             break
@@ -287,7 +287,7 @@ def sample_random_requests(
     num_prompts: int,
     range_ratio: float,
     tokenizer: PreTrainedTokenizerBase,
-) -> List[Tuple[str, int, int]]:
+) -> list[tuple[str, int, int]]:
     prefix_token_ids = np.random.randint(0, tokenizer.vocab_size, size=prefix_len).tolist()
 
     input_lens = np.random.randint(
@@ -314,10 +314,10 @@ def sample_random_requests(
 
 
 async def get_request(
-    input_requests: List[Tuple[str, int, int]],
+    input_requests: list[tuple[str, int, int]],
     request_rate: float,
     burstiness: float = 1.0,
-) -> AsyncGenerator[Tuple[str, int, int], None]:
+) -> AsyncGenerator[tuple[str, int, int], None]:
     """
     Asynchronously generates requests at a specified rate
     with OPTIONAL burstiness.
@@ -357,23 +357,23 @@ async def get_request(
 
 
 def calculate_metrics(
-    input_requests: List[Tuple[str, int, int]],
-    outputs: List[RequestFuncOutput],
+    input_requests: list[tuple[str, int, int]],
+    outputs: list[RequestFuncOutput],
     dur_s: float,
     tokenizer: PreTrainedTokenizerBase,
-    selected_percentile_metrics: List[str],
-    selected_percentiles: List[float],
-    goodput_config_dict: Dict[str, float],
-) -> Tuple[BenchmarkMetrics, List[int]]:
-    actual_output_lens: List[int] = []
+    selected_percentile_metrics: list[str],
+    selected_percentiles: list[float],
+    goodput_config_dict: dict[str, float],
+) -> tuple[BenchmarkMetrics, list[int]]:
+    actual_output_lens: list[int] = []
     total_input = 0
     completed = 0
     good_completed = 0
-    itls: List[float] = []
-    tpots: List[float] = []
-    all_tpots: List[float] = []
-    ttfts: List[float] = []
-    e2els: List[float] = []
+    itls: list[float] = []
+    tpots: list[float] = []
+    all_tpots: list[float] = []
+    ttfts: list[float] = []
+    e2els: list[float] = []
     for i in range(len(outputs)):
         if outputs[i].success:
             output_len = outputs[i].output_tokens
@@ -417,8 +417,8 @@ def calculate_metrics(
             valid_metrics.append(e2els)
             slo_values.append(goodput_config_dict["e2el"] / MILLISECONDS_TO_SECONDS_CONVERSION)
 
-        for req_metric in zip(*valid_metrics):
-            is_good_req = all([s >= r for s, r in zip(slo_values, req_metric)])
+        for req_metric in zip(*valid_metrics, strict=False):
+            is_good_req = all([s >= r for s, r in zip(slo_values, req_metric, strict=False)])
             if is_good_req:
                 good_completed += 1
 
@@ -471,18 +471,18 @@ async def benchmark(
     model_id: str,
     model_name: str,
     tokenizer: PreTrainedTokenizerBase,
-    input_requests: List[Tuple[str, int, int]],
-    logprobs: Optional[int],
+    input_requests: list[tuple[str, int, int]],
+    logprobs: int | None,
     best_of: int,
     request_rate: float,
     burstiness: float,
     disable_tqdm: bool,
     profile: bool,
-    selected_percentile_metrics: List[str],
-    selected_percentiles: List[str],
+    selected_percentile_metrics: list[str],
+    selected_percentiles: list[str],
     ignore_eos: bool,
-    goodput_config_dict: Dict[str, float],
-    max_concurrency: Optional[int],
+    goodput_config_dict: dict[str, float],
+    max_concurrency: int | None,
 ):
     if backend in ASYNC_REQUEST_FUNCS:
         request_func = ASYNC_REQUEST_FUNCS[backend]
@@ -557,7 +557,7 @@ async def benchmark(
             return await request_func(request_func_input=request_func_input, pbar=pbar)
 
     benchmark_start_time = time.perf_counter()
-    tasks: List[asyncio.Task] = []
+    tasks: list[asyncio.Task] = []
     async for request in get_request(input_requests, request_rate, burstiness):
         prompt, prompt_len, output_len, mm_content = request
         request_func_input = RequestFuncInput(
@@ -577,7 +577,7 @@ async def benchmark(
                 limited_request_func(request_func_input=request_func_input, pbar=pbar)
             )
         )
-    outputs: List[RequestFuncOutput] = await asyncio.gather(*tasks)
+    outputs: list[RequestFuncOutput] = await asyncio.gather(*tasks)
 
     if profile:
         print("Stopping profiler...")
@@ -698,7 +698,7 @@ def check_goodput_args(args):
                 raise ValueError(
                     f"Invalid metric name found, {slo_name}: {slo_val}. "
                     "The service level objective name should be one of "
-                    f"{str(VALID_NAMES)}. "
+                    f"{VALID_NAMES!s}. "
                 )
             if slo_val < 0:
                 raise ValueError(
@@ -798,9 +798,9 @@ def main(args: argparse.Namespace):
                 for prompt, prompt_formatted, prompt_len, output_len, _ in input_requests
             ]
         else:
-            assert (
-                tokenizer.chat_template or tokenizer.default_chat_template
-            ), "Tokenizer/model must have chat template for sonnet dataset."
+            assert tokenizer.chat_template or tokenizer.default_chat_template, (
+                "Tokenizer/model must have chat template for sonnet dataset."
+            )
             input_requests = sample_sonnet_requests(
                 dataset_path=args.dataset_path,
                 num_requests=args.num_prompts,
@@ -869,7 +869,7 @@ def main(args: argparse.Namespace):
 
     # Save config and results to json
     if args.save_result:
-        result_json: Dict[str, Any] = {}
+        result_json: dict[str, Any] = {}
 
         # Setup
         current_dt = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -904,7 +904,7 @@ def main(args: argparse.Namespace):
         max_concurrency_str = (
             f"-concurrency{args.max_concurrency}" if args.max_concurrency is not None else ""
         )
-        file_name = f"{backend}-{args.request_rate}qps{max_concurrency_str}-{base_model_id}-{current_dt}.json"  # noqa
+        file_name = f"{backend}-{args.request_rate}qps{max_concurrency_str}-{base_model_id}-{current_dt}.json"
         if args.result_filename:
             file_name = args.result_filename
         if args.result_dir:
@@ -939,7 +939,7 @@ if __name__ == "__main__":
         "--dataset",
         type=str,
         default=None,
-        help="Path to the ShareGPT dataset, will be deprecated in the " "next release.",
+        help="Path to the ShareGPT dataset, will be deprecated in the next release.",
     )
     parser.add_argument(
         "--dataset-name",
@@ -978,13 +978,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--tokenizer",
         type=str,
-        help="Name or path of the tokenizer, if not using the default tokenizer.",  # noqa: E501
+        help="Name or path of the tokenizer, if not using the default tokenizer.",
     )
     parser.add_argument(
         "--best-of",
         type=int,
         default=1,
-        help="Generates `best_of` sequences per prompt and " "returns the best one.",
+        help="Generates `best_of` sequences per prompt and returns the best one.",
     )
     parser.add_argument("--use-beam-search", action="store_true")
     parser.add_argument(
@@ -1156,7 +1156,7 @@ if __name__ == "__main__":
         "--random-range-ratio",
         type=float,
         default=1.0,
-        help="Range of sampled ratio of input/output length, " "used only for random sampling.",
+        help="Range of sampled ratio of input/output length, used only for random sampling.",
     )
     random_group.add_argument(
         "--random-prefix-len",

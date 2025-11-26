@@ -22,6 +22,7 @@ from parallax_utils.file_util import get_project_root
 from parallax_utils.logging_config import get_logger, set_log_level
 from parallax_utils.version_check import check_latest_release
 
+
 app = FastAPI()
 
 app.add_middleware(

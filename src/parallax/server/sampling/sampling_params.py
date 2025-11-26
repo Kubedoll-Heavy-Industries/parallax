@@ -2,8 +2,6 @@
 Sampling parameters of each request
 """
 
-from typing import List, Optional, Union
-
 
 class SamplingParams:
     """Sampling parameter class for a single request"""
@@ -16,13 +14,13 @@ class SamplingParams:
         top_p: float = 1.0,
         min_p: float = 0.0,
         top_k: int = -1,
-        stop_token_ids: Optional[List[int]] = None,
+        stop_token_ids: list[int] | None = None,
         ignore_eos: bool = False,
-        stop_strs: Optional[Union[str, List[str]]] = None,
+        stop_strs: str | list[str] | None = None,
         repetition_penalty: float = 1.0,
         presence_penalty: float = 0.0,
         frequency_penalty: float = 0.0,
-        json_schema: Optional[str] = None,
+        json_schema: str | None = None,
     ) -> None:
         self.max_new_tokens = max_new_tokens
         self.min_new_tokens = min_new_tokens

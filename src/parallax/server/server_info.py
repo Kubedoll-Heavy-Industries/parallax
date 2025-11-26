@@ -7,12 +7,13 @@ We haven't used other info, will wait until DHT implemented.
 import platform
 import subprocess
 from dataclasses import asdict, dataclass
-from typing import Any, ClassVar, Dict, Optional
+from typing import Any, ClassVar
 
 import mlx.core as mx
 from mlx import nn
 from mlx.utils import tree_reduce
 from mlx_lm.tuner.utils import get_total_parameters
+
 
 try:
     import torch
@@ -34,12 +35,12 @@ class HardwareInfo:
     tflops_fp16: float
     num_gpus: int
 
-    def dumps(self) -> Dict[str, Any]:
+    def dumps(self) -> dict[str, Any]:
         """Serializes the HardwareInfo object to a dictionary."""
         return asdict(self)
 
     @classmethod
-    def loads(cls, obj: Dict[str, Any]) -> "HardwareInfo":
+    def loads(cls, obj: dict[str, Any]) -> "HardwareInfo":
         """Deserializes a dictionary into a HardwareInfo object."""
         return cls(**obj)
 
@@ -61,7 +62,7 @@ class AppleSiliconHardwareInfo(HardwareInfo):
     """HardwareInfo specialised for Apple silicon (M-series)."""
 
     # From cpu-monkey.com
-    _APPLE_PEAK_FP16: ClassVar[Dict[str, float]] = {
+    _APPLE_PEAK_FP16: ClassVar[dict[str, float]] = {
         "M1": 4.58,
         "M1 Pro": 10.6,
         "M1 Max": 21.2,
@@ -115,7 +116,7 @@ class NvidiaHardwareInfo(HardwareInfo):
     memory_bandwidth_gbps: float = 0.0
 
     # Best-effort device database; can be extended as needed
-    _GPU_DB: ClassVar[Dict[str, Dict[str, float]]] = {
+    _GPU_DB: ClassVar[dict[str, dict[str, float]]] = {
         # key: substring to match in CUDA device name (case-insensitive)
         "a100-80g": {"tflops_fp16": 312.0, "bandwidth_gbps": 2039.0},
         "a100 80": {"tflops_fp16": 312.0, "bandwidth_gbps": 2039.0},
@@ -126,7 +127,7 @@ class NvidiaHardwareInfo(HardwareInfo):
     }
 
     @classmethod
-    def _match_gpu_specs(cls, name: str, vram_gb: float) -> Dict[str, float]:
+    def _match_gpu_specs(cls, name: str, vram_gb: float) -> dict[str, float]:
         key = name.lower()
         # Specialize A100 by VRAM size when name is generic
         if "a100" in key and ("80" in key or vram_gb >= 60):
@@ -167,7 +168,7 @@ class NvidiaHardwareInfo(HardwareInfo):
         )
 
 
-def detect_node_hardware(node_id: Optional[str]) -> Dict[str, Any]:
+def detect_node_hardware(node_id: str | None) -> dict[str, Any]:
     """Detect local hardware and return a dict for scheduling.
 
     Returns a dictionary with keys compatible with `NodeHardwareInfo` builder:
@@ -236,19 +237,20 @@ class ShardedModelInfo:
     parameter_count: int = 0
     memory_consumption_mb: float = 0.0
 
-    def dumps(self) -> Dict[str, Any]:
+    def dumps(self) -> dict[str, Any]:
         """Serializes the HardwareInfo object to a dictionary."""
         data = asdict(self)
         return data
 
     @classmethod
-    def loads(cls, data: Dict[str, Any]) -> "ShardedModelInfo":
+    def loads(cls, data: dict[str, Any]) -> "ShardedModelInfo":
         """Deserializes a dictionary into a HardwareInfo object."""
         return cls(**data)
 
     @classmethod
     def from_sharded_model(
-        cls, sharded_model_instance: nn.Module  # Instance of your ShardedModel
+        cls,
+        sharded_model_instance: nn.Module,  # Instance of your ShardedModel
     ) -> "ShardedModelInfo":
         """
         Constructs ShardedModelInfo from a loaded ShardedModel instance.

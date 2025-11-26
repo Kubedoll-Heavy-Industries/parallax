@@ -2,14 +2,15 @@ import inspect
 import logging
 import os
 from pathlib import Path
-from typing import Optional
 
 from huggingface_hub import HfApi, hf_hub_download, snapshot_download
+
 
 logger = logging.getLogger(__name__)
 from parallax.utils.weight_filter_utils import (
     determine_needed_weight_files_for_download,
 )
+
 
 # Monkey patch HfApi.repo_info to add short timeout for faster failure on network issues
 # This prevents snapshot_download from hanging silently when Hugging Face Hub is unreachable
@@ -51,7 +52,7 @@ EXCLUDE_WEIGHT_PATTERNS = [
 
 def download_metadata_only(
     repo_id: str,
-    cache_dir: Optional[str] = None,
+    cache_dir: str | None = None,
     force_download: bool = False,
     local_files_only: bool = False,
 ) -> Path:
@@ -72,9 +73,9 @@ def download_metadata_only(
 
 def selective_model_download(
     repo_id: str,
-    start_layer: Optional[int] = None,
-    end_layer: Optional[int] = None,
-    cache_dir: Optional[str] = None,
+    start_layer: int | None = None,
+    end_layer: int | None = None,
+    cache_dir: str | None = None,
     force_download: bool = False,
     local_files_only: bool = False,
 ) -> Path:
@@ -165,8 +166,8 @@ def selective_model_download(
 
 def get_model_path_with_selective_download(
     model_path_or_repo: str,
-    start_layer: Optional[int] = None,
-    end_layer: Optional[int] = None,
+    start_layer: int | None = None,
+    end_layer: int | None = None,
     local_files_only: bool = False,
 ) -> Path:
     return selective_model_download(

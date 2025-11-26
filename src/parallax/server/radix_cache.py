@@ -8,7 +8,6 @@ import heapq
 import time
 from collections import defaultdict
 from functools import partial
-from typing import Dict, List, Optional, Tuple
 
 import mlx.core as mx
 
@@ -25,11 +24,11 @@ class TreeNode:
 
     counter = 0
 
-    def __init__(self, node_id: Optional[int] = None):
+    def __init__(self, node_id: int | None = None):
         self.children = defaultdict(TreeNode)
         self.parent: TreeNode = None
-        self.key: List[int] = None
-        self.value: Optional[List[int]] = None
+        self.key: list[int] = None
+        self.value: list[int] | None = None
         self.kv_cache = None
         self.lock_ref = 0
         self.last_access_time = time.monotonic()
@@ -48,17 +47,17 @@ class TreeNode:
         return self.last_access_time < other.last_access_time
 
 
-def _key_match_page_size1(key0: List, key1: List):
+def _key_match_page_size1(key0: list, key1: list):
     """Key match function especially for page_size=1"""
     i = 0
-    for k0, k1 in zip(key0, key1):
+    for k0, k1 in zip(key0, key1, strict=False):
         if k0 != k1:
             break
         i += 1
     return i
 
 
-def _key_match_paged(key0: List, key1: List, page_size: int):
+def _key_match_paged(key0: list, key1: list, page_size: int):
     """Key match function for page_size>1"""
     min_len = min(len(key0), len(key1))
 
@@ -91,7 +90,7 @@ class RadixCache:
         self.num_layers = num_layers
         self.dtype = dtype
         self.page_size = page_size
-        self.req_to_token: Dict[str, List[int]] = {}
+        self.req_to_token: dict[str, list[int]] = {}
         if max_num_tokens is None:
             self.max_num_tokens = 10000
         else:
@@ -115,7 +114,7 @@ class RadixCache:
         self.protected_size_ = 0
         self.req_to_token = {}
 
-    def update_req_to_token(self, req_id: str, token_ids: List[int]):
+    def update_req_to_token(self, req_id: str, token_ids: list[int]):
         """Update the req->tokens dict"""
         value = self.req_to_token.get(req_id)
         if value:
@@ -129,8 +128,8 @@ class RadixCache:
 
     def match_prefix(
         self,
-        key: List[int],
-    ) -> Tuple[mx.array, mx.array, int]:
+        key: list[int],
+    ) -> tuple[mx.array, mx.array, int]:
         """Find the matching prefix from the radix tree.
         Args:
             key: A list of token IDs to find a matching prefix.
@@ -167,7 +166,7 @@ class RadixCache:
             node = node.parent
         return k_cache, v_cache
 
-    def insert(self, key: List, value, k_cache: mx.array, v_cache: mx.array):
+    def insert(self, key: list, value, k_cache: mx.array, v_cache: mx.array):
         """Insert a tree node."""
         if value is None:
             value = list(key)
@@ -249,7 +248,7 @@ class RadixCache:
         elif self.protected_size_ + self.evictable_size_ > self.max_num_tokens:
             self.evict(self.protected_size_ + self.evictable_size_ - self.max_num_tokens)
 
-    def _match_prefix_helper(self, node: TreeNode, key: List):
+    def _match_prefix_helper(self, node: TreeNode, key: list):
         """Match prefix helper function"""
         node.last_access_time = time.monotonic()
 
@@ -331,7 +330,7 @@ class RadixCache:
         return ret_list
 
     def _insert_helper(
-        self, node: TreeNode, key: List, value: List, k_cache: mx.array, v_cache: mx.array
+        self, node: TreeNode, key: list, value: list, k_cache: mx.array, v_cache: mx.array
     ):
         """Insert key-value helper function"""
         node.last_access_time = time.monotonic()
@@ -405,9 +404,9 @@ class RadixCache:
             for key, child in current_node.children.items():
                 stack.append((child, current_indent + 2))
 
-                assert key == self.get_child_key_fn(
-                    child.key
-                ), f"{key=}, {self.get_child_key_fn(child.key)=}"
+                assert key == self.get_child_key_fn(child.key), (
+                    f"{key=}, {self.get_child_key_fn(child.key)=}"
+                )
 
     def _total_size_helper(self):
         """Get total number of tokens stored helper function"""

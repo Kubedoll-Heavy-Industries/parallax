@@ -18,13 +18,12 @@ KVCacheManager:
     - Performs necessary memory checks to avoid exceeding limits
 """
 
-from typing import Dict, List, Optional, Tuple
-
 import mlx.core as mx
 
 from parallax.server.request import Request, RequestStatus
 from parallax_utils.logging_config import get_logger
 from parallax_utils.utils import compute_max_tokens_in_cache
+
 
 logger = get_logger(__name__)
 
@@ -42,14 +41,14 @@ class KVCache:
         num_layers: int,
         dtype: mx.Dtype,
         block_size: int = 64,
-        conv_dim: Optional[int] = None,
-        conv_kernel_size: Optional[int] = None,
-        linear_k_dim: Optional[int] = None,
-        linear_v_dim: Optional[int] = None,
-        linear_num_k_heads: Optional[int] = None,
-        linear_num_v_heads: Optional[int] = None,
-        qk_nope_head_dim: Optional[int] = None,
-        qk_rope_head_dim: Optional[int] = None,
+        conv_dim: int | None = None,
+        conv_kernel_size: int | None = None,
+        linear_k_dim: int | None = None,
+        linear_v_dim: int | None = None,
+        linear_num_k_heads: int | None = None,
+        linear_num_v_heads: int | None = None,
+        qk_nope_head_dim: int | None = None,
+        qk_rope_head_dim: int | None = None,
         num_initial_tokens: int = 0,
     ):
         """
@@ -104,7 +103,7 @@ class KVCache:
         """Checks if the cache needs to grow."""
         return (self.offset + seq_len) > self.num_tokens
 
-    def fetch(self) -> Tuple[mx.array, mx.array]:
+    def fetch(self) -> tuple[mx.array, mx.array]:
         """Fetches the KV cache for the request."""
         return (
             self.keys[..., : self.offset, :],
@@ -117,8 +116,8 @@ class KVCache:
         self,
         keys: mx.array,
         values: mx.array,
-        state0: Optional[mx.array],
-        state1: Optional[mx.array],
+        state0: mx.array | None,
+        state1: mx.array | None,
     ) -> int:
         """
         Updates the cache with new key-value pairs.
@@ -169,17 +168,17 @@ class KVCacheManager:
         num_layers: int,
         dtype: mx.Dtype,
         block_size: int = 64,
-        max_num_tokens: Optional[int] = None,
+        max_num_tokens: int | None = None,
         cache_memory_fraction: float = 0.5,
-        conv_dim: Optional[int] = None,
-        conv_kernel_size: Optional[int] = None,
-        linear_k_dim: Optional[int] = None,
-        linear_v_dim: Optional[int] = None,
-        linear_num_k_heads: Optional[int] = None,
-        linear_num_v_heads: Optional[int] = None,
-        qk_nope_head_dim: Optional[int] = None,
-        qk_rope_head_dim: Optional[int] = None,
-        v_head_dim: Optional[int] = None,
+        conv_dim: int | None = None,
+        conv_kernel_size: int | None = None,
+        linear_k_dim: int | None = None,
+        linear_v_dim: int | None = None,
+        linear_num_k_heads: int | None = None,
+        linear_num_v_heads: int | None = None,
+        qk_nope_head_dim: int | None = None,
+        qk_rope_head_dim: int | None = None,
+        v_head_dim: int | None = None,
     ):
         """
         Args:
@@ -210,7 +209,7 @@ class KVCacheManager:
             self.head_dim_k = head_dim
         self.head_dim_v = v_head_dim if v_head_dim is not None else head_dim
 
-        self.request_caches: Dict[str, KVCache] = {}
+        self.request_caches: dict[str, KVCache] = {}
         self.tokens_in_cache = 0
 
         self.max_num_tokens = compute_max_tokens_in_cache(
@@ -250,7 +249,7 @@ class KVCacheManager:
         assert self.has_request(request_id), "request not in cache"
         return self.request_caches[request_id].num_tokens
 
-    def gather_kv_cache(self, request_id: str) -> Tuple[mx.array, mx.array]:
+    def gather_kv_cache(self, request_id: str) -> tuple[mx.array, mx.array]:
         """
         Gathers the KV cache for the request.
         """
@@ -267,9 +266,9 @@ class KVCacheManager:
         Returns:
             True if the request is added.
         """
-        assert (
-            request.status == RequestStatus.PREFILLING
-        ), "add_request can only be called for prefilling requests"
+        assert request.status == RequestStatus.PREFILLING, (
+            "add_request can only be called for prefilling requests"
+        )
 
         if request.request_id in self.request_caches:
             logger.warning(f"Request {request.request_id} already in cache")
@@ -314,12 +313,12 @@ class KVCacheManager:
 
     def update_requests(
         self,
-        requests: List[Request],
+        requests: list[Request],
         keys: mx.array,
         values: mx.array,
-        lengths: List[int],
-        states0: Optional[mx.array],
-        states1: Optional[mx.array],
+        lengths: list[int],
+        states0: mx.array | None,
+        states1: mx.array | None,
     ) -> bool:
         """
         Updates the requests in the cache.
@@ -340,14 +339,14 @@ class KVCacheManager:
         assert num_layers == self.num_layers, "key and value must have the same number of layers"
         assert batch_size == len(requests), "key and value must have the same batch size"
         assert len(lengths) == batch_size, "lengths must have the same batch size as requests"
-        assert (
-            n_kv_heads == self.num_kv_heads
-        ), "key and value must have the same number of key-value heads"
+        assert n_kv_heads == self.num_kv_heads, (
+            "key and value must have the same number of key-value heads"
+        )
         assert head_dim_k == self.head_dim_k, "key and value must have the same head dimension"
         assert head_dim_v == self.head_dim_v, "key and value must have the same head dimension"
         # TODO: Use vmap for better performance
         for request, key, value, length, state0, state1 in zip(
-            requests, keys, values, lengths, states0, states1
+            requests, keys, values, lengths, states0, states1, strict=False
         ):
             length = length.item()
             assert self.has_request(request.request_id), "request not in cache"

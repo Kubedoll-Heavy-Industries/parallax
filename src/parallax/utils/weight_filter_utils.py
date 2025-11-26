@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+
 
 logger = logging.getLogger(__name__)
 
@@ -35,20 +35,20 @@ def should_include_weight_key(
 
 def filter_weight_files_by_layer_range_for_load(
     model_path: Path,
-    weight_files: List[str],
+    weight_files: list[str],
     start_layer: int,
     end_layer: int,
     is_first_shard: bool,
     is_last_shard: bool,
-    config: Optional[Dict] = None,
-) -> List[str]:
+    config: dict | None = None,
+) -> list[str]:
     index_file = model_path / "model.safetensors.index.json"
 
     if not index_file.exists():
         logger.debug(f"No index file found at {index_file}, cannot filter weight files")
         return weight_files
 
-    with open(index_file, "r") as f:
+    with open(index_file) as f:
         index_data = json.load(f)
 
     weight_map = index_data.get("weight_map", {})
@@ -62,11 +62,11 @@ def filter_weight_files_by_layer_range_for_load(
     else:
         config_file = model_path / "config.json"
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file) as f:
                 cfg = json.load(f)
                 tie_word_embeddings = cfg.get("tie_word_embeddings", False)
 
-    needed_files: Set[str] = set()
+    needed_files: set[str] = set()
 
     for key, filename in weight_map.items():
         if filename in needed_files:
@@ -105,8 +105,8 @@ def determine_needed_weight_files_for_download(
     model_path: Path,
     start_layer: int,
     end_layer: int,
-    config: Optional[Dict] = None,
-) -> List[str]:
+    config: dict | None = None,
+) -> list[str]:
     is_first_shard = start_layer == 0
 
     is_last_shard = False
@@ -116,7 +116,7 @@ def determine_needed_weight_files_for_download(
     else:
         config_file = model_path / "config.json"
         if config_file.exists():
-            with open(config_file, "r") as f:
+            with open(config_file) as f:
                 cfg = json.load(f)
                 num_hidden_layers = cfg.get("num_hidden_layers", 0)
                 is_last_shard = end_layer >= num_hidden_layers
@@ -139,7 +139,7 @@ def determine_needed_weight_files_for_download(
         logger.debug("No weight files found (neither index nor single file)")
         return []
 
-    with open(index_file, "r") as f:
+    with open(index_file) as f:
         index_data = json.load(f)
 
     weight_map = index_data.get("weight_map", {})
@@ -151,7 +151,7 @@ def determine_needed_weight_files_for_download(
     if config:
         tie_word_embeddings = config.get("tie_word_embeddings", False)
 
-    needed_files: Set[str] = set()
+    needed_files: set[str] = set()
 
     for key, filename in weight_map.items():
         if filename in needed_files:
@@ -166,7 +166,7 @@ def determine_needed_weight_files_for_download(
         ):
             needed_files.add(filename)
 
-    result = sorted(list(needed_files))
+    result = sorted(needed_files)
     logger.debug(
         f"Determined {len(result)} weight files needed for layers [{start_layer}, {end_layer})"
     )

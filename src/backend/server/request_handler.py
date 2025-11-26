@@ -1,6 +1,5 @@
 import json
 import time
-from typing import Dict
 
 import aiohttp
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -9,6 +8,7 @@ from starlette.concurrency import iterate_in_threadpool
 from backend.server.constants import NODE_STATUS_AVAILABLE
 from parallax_utils.logging_config import get_logger
 from parallax_utils.request_metrics import get_request_metrics
+
 
 logger = get_logger(__name__)
 
@@ -39,12 +39,12 @@ class RequestHandler:
             self.stubs[node_id] = self.scheduler_manage.completion_handler.get_stub(node_id)
         return self.stubs[node_id]
 
-    async def _forward_request(self, request_data: Dict, request_id: str, received_ts: int):
+    async def _forward_request(self, request_data: dict, request_id: str, received_ts: int):
         start_time = time.time()
         logger.debug(f"Forwarding request {request_id}; stream={request_data.get('stream', False)}")
         if (
             self.scheduler_manage is None
-            or not self.scheduler_manage.get_schedule_status() == NODE_STATUS_AVAILABLE
+            or self.scheduler_manage.get_schedule_status() != NODE_STATUS_AVAILABLE
         ):
             return JSONResponse(
                 content={"error": "Server is not ready"},
@@ -58,7 +58,7 @@ class RequestHandler:
             try:
                 routing_table = self.scheduler_manage.get_routing_table(request_id, received_ts)
                 logger.debug(
-                    f"get_routing_table for request {request_id} return: {routing_table} (attempt {attempts+1})"
+                    f"get_routing_table for request {request_id} return: {routing_table} (attempt {attempts + 1})"
                 )
             except Exception as e:
                 logger.exception(f"get_routing_table error: {e}")
@@ -157,5 +157,5 @@ class RequestHandler:
                 status_code=500,
             )
 
-    async def v1_chat_completions(self, request_data: Dict, request_id: str, received_ts: int):
+    async def v1_chat_completions(self, request_data: dict, request_id: str, received_ts: int):
         return await self._forward_request(request_data, request_id, received_ts)

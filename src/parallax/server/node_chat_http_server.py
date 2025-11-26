@@ -1,7 +1,6 @@
 import asyncio
 import json
 import time
-from typing import Dict
 
 import fastapi
 import uvicorn
@@ -16,9 +15,11 @@ from backend.server.rpc_connection_handler import RPCConnectionHandler
 from parallax_utils.file_util import get_project_root
 from parallax_utils.logging_config import get_logger
 
+
 logger = get_logger(__name__)
 
 import uuid
+
 
 # Fast API
 app = fastapi.FastAPI(
@@ -31,7 +32,7 @@ async def init_app_states(state: State, node_chat_http_server):
     state.http_server = node_chat_http_server
 
 
-async def v1_chat_completions(request_data: Dict, request_id: str, received_ts: int):
+async def v1_chat_completions(request_data: dict, request_id: str, received_ts: int):
     return await app.state.http_server.chat_completion(request_data, request_id, received_ts)
 
 
@@ -73,7 +74,6 @@ app.mount(
 
 
 class NodeChatHttpServer:
-
     def __init__(self, args):
         self.host = args.host
         self.port = args.node_chat_port
@@ -238,7 +238,7 @@ class NodeChatHttpServer:
                                     timeout=timeout,
                                 )
                                 return chunk
-                            except asyncio.TimeoutError:
+                            except TimeoutError:
                                 return None
                             except StopIteration:
                                 return None

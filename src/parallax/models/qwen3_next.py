@@ -2,16 +2,16 @@
 hidden_dimefines the Qwen3 model.
 """
 
-from typing import Optional, Tuple
-
 import mlx.core as mx
 import mlx.nn as nn
 from mlx_lm.models.base import scaled_dot_product_attention
 from mlx_lm.models.gated_delta import gated_delta_update
-from mlx_lm.models.qwen3_next import ModelArgs
-from mlx_lm.models.qwen3_next import Qwen3NextAttention as MLXQwen3NextAttention
-from mlx_lm.models.qwen3_next import Qwen3NextDecoderLayer as MLXQwen3NextBlock
-from mlx_lm.models.qwen3_next import Qwen3NextGatedDeltaNet as MLXQwen3NextGatedDeltaNet
+from mlx_lm.models.qwen3_next import (
+    ModelArgs,
+    Qwen3NextAttention as MLXQwen3NextAttention,
+    Qwen3NextDecoderLayer as MLXQwen3NextBlock,
+    Qwen3NextGatedDeltaNet as MLXQwen3NextGatedDeltaNet,
+)
 
 
 class ParallaxQwen3NextAttention(MLXQwen3NextAttention):
@@ -36,11 +36,11 @@ class ParallaxQwen3NextAttention(MLXQwen3NextAttention):
     def __call__(
         self,
         x: mx.array,
-        mask: Optional[mx.array] = None,
-        cache: Optional[Tuple[mx.array, mx.array]] = None,
+        mask: mx.array | None = None,
+        cache: tuple[mx.array, mx.array] | None = None,
         offset: int = 0,
-        state_cache: Optional[Tuple[mx.array, mx.array]] = None,
-    ) -> Tuple[mx.array, Tuple[mx.array, mx.array]]:
+        state_cache: tuple[mx.array, mx.array] | None = None,
+    ) -> tuple[mx.array, tuple[mx.array, mx.array]]:
         """
         Attention forward pass with explicit KV cache handling.
 
@@ -133,8 +133,8 @@ class ParallaxQwen3NextGatedDeltaNet(MLXQwen3NextGatedDeltaNet):
     def __call__(
         self,
         inputs,
-        cache: Optional[Tuple[mx.array, mx.array]] = None,
-        state_cache: Optional[Tuple[mx.array, mx.array]] = None,
+        cache: tuple[mx.array, mx.array] | None = None,
+        state_cache: tuple[mx.array, mx.array] | None = None,
     ):
         B, S, _ = inputs.shape
         # print(f"inputs.value --- IGNORE --- {inputs}")
@@ -164,6 +164,7 @@ class ParallaxQwen3NextGatedDeltaNet(MLXQwen3NextGatedDeltaNet):
                 mx.split(conv_out, [self.key_dim, 2 * self.key_dim], -1),
                 [self.num_k_heads, self.num_k_heads, self.num_v_heads],
                 [self.head_k_dim, self.head_k_dim, self.head_v_dim],
+                strict=False,
             )
         ]
         if state_cache is not None:
@@ -209,11 +210,11 @@ class ParallaxQwen3NextBlock(MLXQwen3NextBlock):
     def __call__(
         self,
         x: mx.array,
-        mask: Optional[mx.array] = None,
-        cache: Optional[Tuple[mx.array, mx.array]] = None,
+        mask: mx.array | None = None,
+        cache: tuple[mx.array, mx.array] | None = None,
         offset: int = 0,
-        lengths: Optional[mx.array] = None,
-        state_cache: Optional[Tuple[mx.array, mx.array]] = None,
+        lengths: mx.array | None = None,
+        state_cache: tuple[mx.array, mx.array] | None = None,
     ):
         if self.is_linear:
             r, (k_cache, v_cache, state0, state1) = self.linear_attn(

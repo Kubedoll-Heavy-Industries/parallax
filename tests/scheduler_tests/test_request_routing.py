@@ -16,8 +16,7 @@ from scheduling.request_routing import (
     RoundRobinPipelineRouting,
 )
 
-from .test_utils import build_model_info as build_model
-from .test_utils import build_node, set_rtt_from_coords
+from .test_utils import build_model_info as build_model, build_node, set_rtt_from_coords
 
 
 def test_optimal_path_simple_chain():
@@ -274,7 +273,9 @@ def test_round_robin_pipeline_discovery_overlapping_heads_and_tails():
     expected2 = [(0, 23), (23, 47), (47, 64)]
 
     def matches_path(path, expected):
-        return len(path) == len(expected) and all(a == b for a, b in zip(path, expected))
+        return len(path) == len(expected) and all(
+            a == b for a, b in zip(path, expected, strict=False)
+        )
 
     has_expected1 = any(
         matches_path(r, expected1) or matches_path(r, expected1_alt) for r in ranges

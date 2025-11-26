@@ -13,8 +13,8 @@ from mlx_lm.tokenizer_utils import (
     _is_bpe_decoder,
     _is_spm_decoder,
     _is_spm_decoder_no_space,
+    load_tokenizer as _mlx_load_tokenizer,
 )
-from mlx_lm.tokenizer_utils import load_tokenizer as _mlx_load_tokenizer
 
 
 class ParallaxNaiveStreamingDetokenizer(NaiveStreamingDetokenizer):
@@ -80,7 +80,7 @@ def load_detokenizer(model_path, tokenizer):
 
     tokenizer_file = model_path / "tokenizer.json"
     if tokenizer_file.exists():
-        with open(tokenizer_file, "r", encoding="utf-8") as fid:
+        with open(tokenizer_file, encoding="utf-8") as fid:
             try:
                 tokenizer_content = json.load(fid)
             except JSONDecodeError as e:

@@ -21,6 +21,7 @@ from parallax_utils.file_util import get_project_root
 from parallax_utils.logging_config import get_logger
 from parallax_utils.version_check import get_current_version
 
+
 logger = get_logger("parallax.cli")
 
 PUBLIC_INITIAL_PEERS = [
@@ -59,7 +60,7 @@ def _flag_present(args_list: list[str], flag_names: list[str]) -> bool:
     if not args_list:
         return False
     flags_set = set(flag_names)
-    for i, token in enumerate(args_list):
+    for _i, token in enumerate(args_list):
         if token in flags_set:
             return True
         for flag in flags_set:
@@ -315,7 +316,7 @@ def load_package_info():
         project_root = get_project_root()
         if not (project_root / ".cache" / "tmp_key.txt").exists():
             return None
-        with open(project_root / ".cache" / "tmp_key.txt", "r") as f:
+        with open(project_root / ".cache" / "tmp_key.txt") as f:
             return json.loads(reversible_decode_string(f.read()))
     except Exception:
         return None

@@ -36,7 +36,7 @@ class HexColorPrinter:
 
     @classmethod
     def color_distance(cls, rgb1, rgb2):
-        return math.sqrt(sum((c1 - c2) ** 2 for c1, c2 in zip(rgb1, rgb2)))
+        return math.sqrt(sum((c1 - c2) ** 2 for c1, c2 in zip(rgb1, rgb2, strict=False)))
 
     @classmethod
     def find_closest_color(cls, target_hex):
@@ -202,7 +202,7 @@ def display_ascii_animation_join(animation_data, model_name):
 def display_parallax_run():
     file_path = str(get_project_root()) + "/src/parallax_utils/anime/parallax_run.json"
     try:
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             animation_data = json.load(f)
     except FileNotFoundError:
         print(f"Error: The file '{file_path}' was not found.")
@@ -216,7 +216,7 @@ def display_parallax_run():
 def display_parallax_join(model_name):
     file_path = str(get_project_root()) + "/src/parallax_utils/anime/parallax_join.json"
     try:
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             animation_data = json.load(f)
     except FileNotFoundError:
         print(f"Error: The file '{file_path}' was not found.")

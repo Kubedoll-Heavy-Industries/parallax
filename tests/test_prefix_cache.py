@@ -6,6 +6,7 @@ import mlx.core as mx
 
 from parallax.server.radix_cache import RadixCache
 
+
 if __name__ == "__main__":
     DATA_TYPE = mx.bfloat16
     tree = RadixCache(
