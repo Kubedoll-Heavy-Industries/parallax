@@ -7,7 +7,6 @@ arguments needed by decentralized inference.
 import logging
 import os
 import random
-from typing import List, Optional
 
 import sglang
 import sglang.srt.distributed.parallel_state
@@ -40,6 +39,7 @@ from parallax.sglang.monkey_patch_utils.weight_loader_filter import (
     set_layer_range_for_filtering,
 )
 from parallax.utils.tokenizer_utils import load_tokenizer
+
 
 logger = logging.getLogger(__name__)
 
@@ -209,15 +209,15 @@ def form_sgl_server_args(
     attention_backend: str = "flashinfer",
     kv_block_size: int = 64,
     moe_runner_backend="auto",
-    enable_lora: Optional[bool] = False,
-    max_lora_rank: Optional[int] = None,
-    lora_target_modules: Optional[List[str]] = None,
-    lora_paths: Optional[List[str]] = None,
-    max_loras_per_batch: Optional[int] = None,
-    max_loaded_loras: Optional[int] = None,
-    lora_eviction_policy: Optional[str] = "lru",
-    lora_backend: Optional[str] = "triton",
-    max_lora_chunk_size: Optional[int] = 128,
+    enable_lora: bool | None = False,
+    max_lora_rank: int | None = None,
+    lora_target_modules: list[str] | None = None,
+    lora_paths: list[str] | None = None,
+    max_loras_per_batch: int | None = None,
+    max_loaded_loras: int | None = None,
+    lora_eviction_policy: str | None = "lru",
+    lora_backend: str | None = "triton",
+    max_lora_chunk_size: int | None = 128,
 ):
     """Creates a SGL ServerArgs object"""
     sgl_server_args = ServerArgs(
@@ -251,15 +251,15 @@ def initialize_sgl_model_runner(
     kv_block_size: int,
     moe_runner_backend: str,
     max_num_tokens_per_batch: int = 1024,
-    enable_lora: Optional[bool] = False,
-    max_lora_rank: Optional[int] = None,
-    lora_target_modules: Optional[List[str]] = None,
-    lora_paths: Optional[List[str]] = None,
-    max_loras_per_batch: Optional[int] = None,
-    max_loaded_loras: Optional[int] = None,
-    lora_eviction_policy: Optional[str] = "lru",
-    lora_backend: Optional[str] = "triton",
-    max_lora_chunk_size: Optional[int] = 128,
+    enable_lora: bool | None = False,
+    max_lora_rank: int | None = None,
+    lora_target_modules: list[str] | None = None,
+    lora_paths: list[str] | None = None,
+    max_loras_per_batch: int | None = None,
+    max_loaded_loras: int | None = None,
+    lora_eviction_policy: str | None = "lru",
+    lora_backend: str | None = "triton",
+    max_lora_chunk_size: int | None = 128,
     **kwargs,
 ):
     """
@@ -275,7 +275,7 @@ def initialize_sgl_model_runner(
     tp_rank = kwargs.get("tp_rank", 0)
     tp_size = kwargs.get("tp_size", 1)
     use_hfcache = kwargs.get("use_hfcache", False)
-    nccl_port = kwargs.get("nccl_port", None)
+    nccl_port = kwargs.get("nccl_port")
     # Use selective download for GPU models to save bandwidth and disk space
     from parallax.utils.selective_download import get_model_path_with_selective_download
 
@@ -304,7 +304,7 @@ def initialize_sgl_model_runner(
 
     architectures = config.get("architectures", [])
     if architectures and any("Qwen3Next" in arch for arch in architectures):
-        logger.debug(f"Qwen3-Next model detected, setting kv_block_size to 1")
+        logger.debug("Qwen3-Next model detected, setting kv_block_size to 1")
         kv_block_size = 1
 
     server_args = form_sgl_server_args(

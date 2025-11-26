@@ -1,15 +1,15 @@
 import os
-from typing import Dict, List
 
 import mlx.core as mx
 
+
 # Cache for compiled kernels
-_KERNELS: Dict[str, object] = {}
+_KERNELS: dict[str, object] = {}
 
 
 def _get_metal_source(filename):
     path = os.path.join(os.path.dirname(__file__), filename)
-    with open(path, "r") as f:
+    with open(path) as f:
         return f.read()
 
 
@@ -29,8 +29,8 @@ def _type_to_string(dtype: mx.Dtype) -> str:
 def _get_kernel(
     name: str,
     filename: str,
-    input_names: List[str],
-    output_names: List[str],
+    input_names: list[str],
+    output_names: list[str],
     dtype: mx.Dtype = mx.float32,
 ):
     type_str = _type_to_string(dtype)

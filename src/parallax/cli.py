@@ -21,6 +21,7 @@ from parallax_utils.file_util import get_project_root
 from parallax_utils.logging_config import get_logger
 from parallax_utils.version_check import get_current_version
 
+
 logger = get_logger("parallax.cli")
 
 PUBLIC_INITIAL_PEERS = [
@@ -315,7 +316,7 @@ def load_package_info():
         project_root = get_project_root()
         if not (project_root / ".cache" / "tmp_key.txt").exists():
             return None
-        with open(project_root / ".cache" / "tmp_key.txt", "r") as f:
+        with open(project_root / ".cache" / "tmp_key.txt") as f:
             return json.loads(reversible_decode_string(f.read()))
     except Exception:
         return None

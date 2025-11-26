@@ -17,6 +17,7 @@ from parallax.server.request import InitialRequest
 from parallax.utils.tokenizer_utils import load_tokenizer
 from parallax.utils.utils import get_current_device
 
+
 MLX_MODEL_REPO = "mlx-community/Qwen3-0.6B-bf16"
 CUDA_MODEL_REPO = "Qwen/Qwen3-0.6B"
 

@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import torch
-from vllm.sampling_params import SamplingParams as VLLMSamplingParams
-from vllm.sampling_params import StructuredOutputsParams
+from vllm.sampling_params import SamplingParams as VLLMSamplingParams, StructuredOutputsParams
 from vllm.sequence import IntermediateTensors
 from vllm.v1.core.sched.output import CachedRequestData, NewRequestData, SchedulerOutput
 from vllm.v1.request import Request as VLLMRequest
@@ -15,10 +14,11 @@ from parallax.server.sampling.sampling_params import (
 )
 from parallax_utils.logging_config import get_logger
 
+
 logger = get_logger(__name__)
 
 
-def compute_expected_intermediate_tokens(scheduler_output: Any, model_runner: Any) -> Optional[int]:
+def compute_expected_intermediate_tokens(scheduler_output: Any, model_runner: Any) -> int | None:
     """
     Estimate the padded token count expected by vLLM for this batch.
 
@@ -81,7 +81,7 @@ def pad_or_trim_tensor(tensor: torch.Tensor, target_len: int) -> torch.Tensor:
 
 
 def resize_intermediate_tensors(
-    intermediate_tensors: IntermediateTensors, target_len: Optional[int]
+    intermediate_tensors: IntermediateTensors, target_len: int | None
 ) -> IntermediateTensors:
     """
     Resize all tensors in IntermediateTensors to match the target length.
@@ -160,9 +160,9 @@ def _build_vllm_request(
 
 
 def form_vllm_batch_prefill(
-    batched_requests: List[Request],
+    batched_requests: list[Request],
     model_runner: Any = None,
-) -> Optional[SchedulerOutput]:
+) -> SchedulerOutput | None:
     if not batched_requests:
         return None
 
@@ -176,10 +176,10 @@ def form_vllm_batch_prefill(
 
     num_common_prefix_blocks = [0] * len(model_runner.kv_cache_config.kv_cache_groups)
 
-    created_vllm_requests: List[VLLMRequest] = []
+    created_vllm_requests: list[VLLMRequest] = []
 
     new_request_data_list = []
-    num_scheduled_tokens: Dict[str, int] = {}
+    num_scheduled_tokens: dict[str, int] = {}
     total_tokens = 0
 
     for req in batched_requests:
@@ -248,11 +248,11 @@ def form_vllm_batch_prefill(
 
 
 def form_vllm_batch_decode(
-    batched_requests: List[Request],
+    batched_requests: list[Request],
     model_runner: Any = None,
     scheduler: Any = None,
     **kwargs,
-) -> Optional[SchedulerOutput]:
+) -> SchedulerOutput | None:
     if not batched_requests:
         return None
 
@@ -264,14 +264,14 @@ def form_vllm_batch_decode(
 
     kv_cache_manager = model_runner.kv_cache_manager
 
-    req_ids: List[str] = []
-    resumed_from_preemption: List[bool] = []
-    new_token_ids: List[List[int]] = []
-    resumed_req_token_ids: List[List[int] | None] = []
-    new_block_ids: List[tuple[List[int], ...] | None] = []
-    num_computed_tokens: List[int] = []
-    num_output_tokens: List[int] = []
-    num_scheduled_tokens: Dict[str, int] = {}
+    req_ids: list[str] = []
+    resumed_from_preemption: list[bool] = []
+    new_token_ids: list[list[int]] = []
+    resumed_req_token_ids: list[list[int] | None] = []
+    new_block_ids: list[tuple[list[int], ...] | None] = []
+    num_computed_tokens: list[int] = []
+    num_output_tokens: list[int] = []
+    num_scheduled_tokens: dict[str, int] = {}
 
     for req in batched_requests:
         req_ids.append(req.request_id)

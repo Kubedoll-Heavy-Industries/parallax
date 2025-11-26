@@ -22,7 +22,7 @@ repos:
     hooks:
       # Run the linter
       - id: ruff-check
-        args: [--fix, --all-files]
+        args: [--fix]
         exclude: '^src/parallax/p2p/proto/'
       # Run the formatter
       - id: ruff-format

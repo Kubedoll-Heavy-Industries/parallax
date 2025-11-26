@@ -2,13 +2,13 @@
 hidden_dimefines the Qwen3 model.
 """
 
-from typing import Optional, Tuple
-
 import mlx.core as mx
 from mlx_lm.models.base import create_causal_mask, scaled_dot_product_attention
-from mlx_lm.models.gpt_oss import AttentionBlock as MLXGPTOSSAttention
-from mlx_lm.models.gpt_oss import ModelArgs
-from mlx_lm.models.gpt_oss import TransformerBlock as MLXGPTOSSBlock
+from mlx_lm.models.gpt_oss import (
+    AttentionBlock as MLXGPTOSSAttention,
+    ModelArgs,
+    TransformerBlock as MLXGPTOSSBlock,
+)
 
 
 class ParallaxGPTOSSAttention(MLXGPTOSSAttention):
@@ -21,11 +21,11 @@ class ParallaxGPTOSSAttention(MLXGPTOSSAttention):
     def __call__(
         self,
         x: mx.array,
-        mask: Optional[mx.array] = None,
-        cache: Optional[Tuple[mx.array, mx.array]] = None,
+        mask: mx.array | None = None,
+        cache: tuple[mx.array, mx.array] | None = None,
         offset: int = 0,
-        length: Optional[mx.array] = None,
-    ) -> Tuple[mx.array, Tuple[mx.array, mx.array]]:
+        length: mx.array | None = None,
+    ) -> tuple[mx.array, tuple[mx.array, mx.array]]:
         """
         Attention forward pass with explicit KV cache handling.
 
@@ -221,12 +221,11 @@ class ParallaxGPTOSSBlock(MLXGPTOSSBlock):
     def __call__(
         self,
         x: mx.array,
-        mask: Optional[mx.array] = None,
-        cache: Optional[Tuple[mx.array, mx.array]] = None,
+        mask: mx.array | None = None,
+        cache: tuple[mx.array, mx.array] | None = None,
         offset: int = 0,
-        lengths: Optional[mx.array] = None,
+        lengths: mx.array | None = None,
     ):
-
         batch, target_len, _ = x.shape
         mx_length = offset if offset != 0 else target_len - 1
         pad_length = mx_length - lengths

@@ -6,13 +6,13 @@ exposes the same block interface as Qwen implementations, so that
 `ShardedModel` can drive it uniformly.
 """
 
-from typing import Optional, Tuple
-
 import mlx.core as mx
 from mlx_lm.models.base import scaled_dot_product_attention
-from mlx_lm.models.llama import Attention as MLXLlamaAttention
-from mlx_lm.models.llama import ModelArgs
-from mlx_lm.models.llama import TransformerBlock as MLXLlamaBlock
+from mlx_lm.models.llama import (
+    Attention as MLXLlamaAttention,
+    ModelArgs,
+    TransformerBlock as MLXLlamaBlock,
+)
 
 
 class ParallaxLlamaAttention(MLXLlamaAttention):
@@ -25,10 +25,10 @@ class ParallaxLlamaAttention(MLXLlamaAttention):
     def __call__(
         self,
         x: mx.array,
-        mask: Optional[mx.array] = None,
-        cache: Optional[Tuple[mx.array, mx.array]] = None,
+        mask: mx.array | None = None,
+        cache: tuple[mx.array, mx.array] | None = None,
         offset: int = 0,
-    ) -> Tuple[mx.array, Tuple[mx.array, mx.array]]:
+    ) -> tuple[mx.array, tuple[mx.array, mx.array]]:
         """
         Attention forward pass with explicit KV cache handling.
 
@@ -97,10 +97,10 @@ class ParallaxLlamaBlock(MLXLlamaBlock):
     def __call__(
         self,
         x: mx.array,
-        mask: Optional[mx.array] = None,
-        cache: Optional[Tuple[mx.array, mx.array]] = None,
+        mask: mx.array | None = None,
+        cache: tuple[mx.array, mx.array] | None = None,
         offset: int = 0,
-        lengths: Optional[mx.array] = None,
+        lengths: mx.array | None = None,
     ):
         r, (k_cache, v_cache) = self.self_attn(self.input_layernorm(x), mask, cache, offset=offset)
         h = x + r

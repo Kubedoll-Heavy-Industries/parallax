@@ -1,10 +1,10 @@
 import logging
 from pathlib import Path
-from typing import List
 
 from parallax.utils.weight_filter_utils import (
     filter_weight_files_by_layer_range_for_load,
 )
+
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ def set_layer_range_for_filtering(pp_start_layer: int, pp_end_layer: int, num_hi
     _layer_range_cache["num_hidden_layers"] = num_hidden_layers
 
 
-def _filter_weight_files_by_cache(hf_weights_files: List[str]) -> List[str]:
+def _filter_weight_files_by_cache(hf_weights_files: list[str]) -> list[str]:
     global _layer_range_cache
 
     pp_start_layer = _layer_range_cache.get("pp_start_layer")
@@ -60,7 +60,6 @@ def apply_weight_loader_filter_patch():
             and files
             and any(f.endswith((".safetensors", ".bin", ".pt")) for f in files)
         ):
-
             # Filter if we have layer range set
             global _layer_range_cache
             if _layer_range_cache.get("pp_start_layer") is not None:

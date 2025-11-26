@@ -21,12 +21,12 @@ Our scheduler also handles tokenization and pre-processing for the First Peer's 
 
 import time
 from collections import OrderedDict
-from typing import Dict, List, Optional
 
 from parallax.server.kv_cache import KVCacheManager
 from parallax.server.request import InitialRequest, Request, RequestStatus
 from parallax.utils.shared_state import SharedState
 from parallax_utils.logging_config import get_logger
+
 
 logger = get_logger(__name__)
 
@@ -45,9 +45,9 @@ class Scheduler:
         scheduler_wait_ms: int = 200,
         micro_batch_ratio: int = 2,
         is_first_peer: bool = False,
-        kv_cache_manager: Optional[KVCacheManager] = None,
-        request_timeout_s: Optional[int] = 600,
-        shared_state: Optional[SharedState] = None,
+        kv_cache_manager: KVCacheManager | None = None,
+        request_timeout_s: int | None = 600,
+        shared_state: SharedState | None = None,
         **kwargs,
     ):
         """
@@ -67,15 +67,15 @@ class Scheduler:
         self.is_first_peer = is_first_peer
         if is_first_peer:
             # Load configs for building InitialRequest
-            self.tokenizer = kwargs.get("tokenizer", None)
-            self.eos_token_id = kwargs.get("eos_token_id", None)
+            self.tokenizer = kwargs.get("tokenizer")
+            self.eos_token_id = kwargs.get("eos_token_id")
             self.max_new_tokens = kwargs.get("max_new_tokens", 512)
             self.max_total_length = kwargs.get("max_total_length", 1024)
 
         # Prefill wait queue (FIFO) for admission
-        self._wait_queue: List[Request] = []
+        self._wait_queue: list[Request] = []
         # Keeps track of all in-flight requests
-        self._running_requests: Dict[str, Request] = OrderedDict()
+        self._running_requests: dict[str, Request] = OrderedDict()
 
         self.kv_cache_manager = kv_cache_manager
         self.shared_state = shared_state
@@ -100,7 +100,7 @@ class Scheduler:
         """Get the number of requests currently being processed."""
         return len(self._running_requests)
 
-    def get_running_request(self, request_id: str) -> Optional[Request]:
+    def get_running_request(self, request_id: str) -> Request | None:
         """Gets a request that is currently in the running state."""
         return self._running_requests.get(request_id)
 
@@ -172,9 +172,9 @@ class Scheduler:
     def check_and_update_request_status(self, request: InitialRequest) -> bool:
         """Checks if a request has met any finishing conditions and updates its status."""
         assert self.is_first_peer, "Only first peer can check and update request status."
-        assert (
-            self.eos_token_id is not None
-        ), "EOS token ID must be set for request status checking."
+        assert self.eos_token_id is not None, (
+            "EOS token ID must be set for request status checking."
+        )
         if request.is_finished:
             return True
 
@@ -182,26 +182,29 @@ class Scheduler:
         last_token_id = request.output_ids[-1] if request.output_ids else None
         if request.abort:
             finished = True
-        if not request.sampling_params.ignore_eos and (
-            self.eos_token_id
+        if (
+            not request.sampling_params.ignore_eos
             and (
-                last_token_id == self.eos_token_id
-                or (isinstance(self.eos_token_id, list) and last_token_id in self.eos_token_id)
+                self.eos_token_id
+                and (
+                    last_token_id == self.eos_token_id
+                    or (isinstance(self.eos_token_id, list) and last_token_id in self.eos_token_id)
+                )
+            )
+        ) or (
+            not request.sampling_params.ignore_eos
+            and (
+                self.tokenizer
+                and self.tokenizer.eos_token_id
+                and last_token_id == self.tokenizer.eos_token_id
             )
         ):
             request.update_status(RequestStatus.FINISHED_EOS)
             finished = True
-        elif not request.sampling_params.ignore_eos and (
-            self.tokenizer
-            and self.tokenizer.eos_token_id
-            and last_token_id == self.tokenizer.eos_token_id
+        elif (
+            request.output_length >= request.max_new_tokens
+            or request.total_length >= request.max_total_length
         ):
-            request.update_status(RequestStatus.FINISHED_EOS)
-            finished = True
-        elif request.output_length >= request.max_new_tokens:
-            request.update_status(RequestStatus.FINISHED_MAX_LENGTH)
-            finished = True
-        elif request.total_length >= request.max_total_length:
             request.update_status(RequestStatus.FINISHED_MAX_LENGTH)
             finished = True
 
@@ -250,12 +253,12 @@ class Scheduler:
 
         return
 
-    def get_timed_out_requests(self) -> List[Request]:
+    def get_timed_out_requests(self) -> list[Request]:
         """Return running requests that exceeded their timeout and mark them aborted.
 
         This does not evict or release resources; callers must handle cleanup.
         """
-        timed_out: List[Request] = []
+        timed_out: list[Request] = []
         now = time.time()
         for req in list(self._running_requests.values()):
             try:
@@ -268,7 +271,7 @@ class Scheduler:
                 continue
         return timed_out
 
-    def form_batch(self) -> List[Request]:
+    def form_batch(self) -> list[Request]:
         """Form the active batch for the next forward pass.
 
         - Select prefills first (FIFO by admission), then decodes that are ready
@@ -281,7 +284,7 @@ class Scheduler:
             return []
 
         inflight_tokens = 0
-        batch: List[Request] = []
+        batch: list[Request] = []
 
         # Prefill candidates: preserve admission order via OrderedDict iteration
         prefill_candidates = []

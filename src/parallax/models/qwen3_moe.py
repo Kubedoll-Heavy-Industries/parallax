@@ -2,13 +2,13 @@
 hidden_dimefines the Qwen3 model.
 """
 
-from typing import Optional, Tuple
-
 import mlx.core as mx
 from mlx_lm.models.base import scaled_dot_product_attention
-from mlx_lm.models.qwen3_moe import Attention as MLXQwen3MoeAttention
-from mlx_lm.models.qwen3_moe import ModelArgs
-from mlx_lm.models.qwen3_moe import Qwen3MoeDecoderLayer as MLXQwen3MoeBlock
+from mlx_lm.models.qwen3_moe import (
+    Attention as MLXQwen3MoeAttention,
+    ModelArgs,
+    Qwen3MoeDecoderLayer as MLXQwen3MoeBlock,
+)
 
 
 class ParallaxQwen3MoeAttention(MLXQwen3MoeAttention):
@@ -21,11 +21,11 @@ class ParallaxQwen3MoeAttention(MLXQwen3MoeAttention):
     def __call__(
         self,
         x: mx.array,
-        mask: Optional[mx.array] = None,
-        cache: Optional[Tuple[mx.array, mx.array]] = None,
+        mask: mx.array | None = None,
+        cache: tuple[mx.array, mx.array] | None = None,
         offset: int = 0,
-        lengths: Optional[mx.array] = None,
-    ) -> Tuple[mx.array, Tuple[mx.array, mx.array]]:
+        lengths: mx.array | None = None,
+    ) -> tuple[mx.array, tuple[mx.array, mx.array]]:
         """
         Attention forward pass with explicit KV cache handling.
 
@@ -102,10 +102,10 @@ class ParallaxQwen3MoeBlock(MLXQwen3MoeBlock):
     def __call__(
         self,
         x: mx.array,
-        mask: Optional[mx.array] = None,
-        cache: Optional[Tuple[mx.array, mx.array]] = None,
+        mask: mx.array | None = None,
+        cache: tuple[mx.array, mx.array] | None = None,
         offset: int = 0,
-        lengths: Optional[mx.array] = None,
+        lengths: mx.array | None = None,
     ):
         r, (k_cache, v_cache) = self.self_attn(self.input_layernorm(x), mask, cache, offset=offset)
         h = x + r

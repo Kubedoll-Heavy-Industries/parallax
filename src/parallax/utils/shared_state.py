@@ -7,9 +7,10 @@ with dict-like interface and get/set methods.
 
 from __future__ import annotations
 
+import builtins
 import multiprocessing
 import time
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 
 class SharedState:
@@ -19,7 +20,7 @@ class SharedState:
     Automatically handles conversion from dict to SharedState.
     """
 
-    def __init__(self, manager_dict: Optional[Union[Dict[str, Any], "SharedState"]] = None):
+    def __init__(self, manager_dict: builtins.dict[str, Any] | SharedState | None = None):
         """Initialize SharedState with a Manager().dict(), dict, SharedState, or None.
 
         Args:
@@ -66,11 +67,11 @@ class SharedState:
         return key in self._dict
 
     @property
-    def dict(self) -> Dict[str, Any]:
+    def dict(self) -> builtins.dict[str, Any]:
         """Get the underlying Manager().dict() for multiprocessing serialization."""
         return self._dict
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> builtins.dict[str, Any]:
         """Get a shallow copy of current metrics suitable for JSON serialization."""
         metrics_dict = self._dict.get("metrics")
         if not metrics_dict:
@@ -81,8 +82,8 @@ class SharedState:
     def update_metrics(
         self,
         *,
-        current_requests: Optional[int] = None,
-        layer_latency_ms_sample: Optional[float] = None,
+        current_requests: int | None = None,
+        layer_latency_ms_sample: float | None = None,
         ewma_alpha: float = 0.2,
     ) -> None:
         """Update metrics with optional fields and EWMA smoothing for latency.
@@ -109,7 +110,7 @@ class SharedState:
                 )
         metrics_dict["_last_update_ts"] = time.time()
 
-    def get_model_info(self) -> Dict[str, Any]:
+    def get_model_info(self) -> builtins.dict[str, Any]:
         """Get model and layer allocation information."""
         return {
             "model_name": self._dict.get("model_name"),
@@ -123,7 +124,7 @@ class SharedState:
         """Check if layer allocation has changed."""
         return self._dict.get("_layer_allocation_changed", False)
 
-    def get_status(self) -> Optional[str]:
+    def get_status(self) -> str | None:
         """Get current status."""
         return self._dict.get("status")
 
@@ -132,7 +133,7 @@ class SharedState:
         self._dict["status"] = status
 
     @classmethod
-    def create(cls) -> "SharedState":
+    def create(cls) -> SharedState:
         """Create a new SharedState with default initialization.
 
         Returns:

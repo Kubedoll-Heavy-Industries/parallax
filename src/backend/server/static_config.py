@@ -6,6 +6,7 @@ from pathlib import Path
 from parallax_utils.logging_config import get_logger
 from scheduling.model_info import ModelInfo
 
+
 logger = get_logger(__name__)
 
 # Supported model list - key: model name, value: MLX model name (same as key if no MLX variant)
@@ -96,7 +97,7 @@ def get_model_info(model_name, use_hfcache: bool = False):
         local_path = Path(name)
         if local_path.exists():
             config_path = local_path / "config.json"
-            with open(config_path, "r") as f:
+            with open(config_path) as f:
                 return json.load(f)
 
         # Hugging Face only – download just config.json
@@ -105,7 +106,7 @@ def get_model_info(model_name, use_hfcache: bool = False):
         config_file = hf_hub_download(
             repo_id=name, filename="config.json", local_files_only=use_hfcache
         )
-        with open(config_file, "r") as f:
+        with open(config_file) as f:
             return json.load(f)
 
     config = _load_config_only(model_name)

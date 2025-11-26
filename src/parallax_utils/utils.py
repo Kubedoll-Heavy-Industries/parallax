@@ -1,9 +1,8 @@
-from typing import Optional
-
 import torch
 
 from parallax.server.server_info import HardwareInfo
 from parallax_utils.logging_config import get_logger
+
 
 logger = get_logger(__name__)
 
@@ -50,7 +49,7 @@ def compute_max_tokens_in_cache(
     head_dim_k: int,
     head_dim_v: int,
     elem_bytes: int,
-    available_cache_bytes: Optional[int] = None,
+    available_cache_bytes: int | None = None,
 ) -> int:
     """Estimate max tokens storable in KV cache given current free memory and fraction."""
     if available_cache_bytes is not None:
@@ -74,12 +73,12 @@ def compute_max_tokens_in_cache(
 
 def derive_max_batch_size(
     *,
-    requested_max_batch_size: Optional[int],
-    max_sequence_len: Optional[int],
-    max_tokens_in_cache: Optional[int],
+    requested_max_batch_size: int | None,
+    max_sequence_len: int | None,
+    max_tokens_in_cache: int | None,
 ) -> int:
     """Derive final max_batch_size clamped by KV capacity if sequence length known."""
-    max_batch_capacity: Optional[int] = None
+    max_batch_capacity: int | None = None
     if max_sequence_len and max_tokens_in_cache:
         max_batch_capacity = max(1, max_tokens_in_cache // int(max_sequence_len))
     if requested_max_batch_size is None:
@@ -94,18 +93,18 @@ def derive_max_batch_size(
 
 def compute_max_batch_size(
     *,
-    requested_max_batch_size: Optional[int],
-    max_sequence_len: Optional[int],
-    device: Optional[str],
+    requested_max_batch_size: int | None,
+    max_sequence_len: int | None,
+    device: str | None,
     kv_cache_memory_fraction: float,
     num_shard_layers: int,
     num_key_value_heads: int,
     head_dim: int,
     dtype=None,
-    elem_bytes: Optional[int] = None,
-    memory_gb: Optional[float] = None,
-    head_dim_k: Optional[int] = None,
-    head_dim_v: Optional[int] = None,
+    elem_bytes: int | None = None,
+    memory_gb: float | None = None,
+    head_dim_k: int | None = None,
+    head_dim_v: int | None = None,
 ) -> int:
     """Compute final max_batch_size by chaining dtype->elem_bytes, KV capacity, and clamping.
 

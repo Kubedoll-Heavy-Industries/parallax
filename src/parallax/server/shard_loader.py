@@ -5,7 +5,7 @@ Loads sharded MLX models from Hugging Face Hub or local paths.
 import glob
 import importlib
 import pathlib
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import mlx.core as mx
 import safetensors
@@ -15,6 +15,7 @@ from mlx_lm.utils import get_model_path, load_config
 from parallax.server.model import ShardedModel
 from parallax.utils.tokenizer_utils import load_tokenizer
 from parallax_utils.logging_config import get_logger
+
 
 logger = get_logger(__name__)
 
@@ -34,8 +35,8 @@ class MLXModelLoader:
         self,
         model_path_or_hf_repo: str,
         *,
-        start_layer: Optional[int] = None,
-        end_layer: Optional[int] = None,
+        start_layer: int | None = None,
+        end_layer: int | None = None,
         use_hfcache: bool = False,
     ):
         """
@@ -74,7 +75,7 @@ class MLXModelLoader:
 
                 # Get EntryClass from the module
                 if hasattr(module, "EntryClass"):
-                    entry_class = getattr(module, "EntryClass")
+                    entry_class = module.EntryClass
 
                     # Get architecture from class attribute
                     if hasattr(entry_class, "get_architecture"):
@@ -89,7 +90,7 @@ class MLXModelLoader:
 
     def load(
         self, lazy: bool = False, strict: bool = True, use_selective_download: bool = True
-    ) -> Tuple[nn.Module, Dict[str, Any], Any]:
+    ) -> tuple[nn.Module, dict[str, Any], Any]:
         """
         Loads the specified model shard by loading only the necessary weights
         from the safetensor files, saving significant memory.
@@ -151,7 +152,7 @@ class MLXModelLoader:
 
         try:
             arch_module = importlib.import_module(model_class)
-            model_args_class = getattr(arch_module, "ModelArgs")
+            model_args_class = arch_module.ModelArgs
             model_args = model_args_class.from_dict(config)
 
         except (ImportError, AttributeError) as e:

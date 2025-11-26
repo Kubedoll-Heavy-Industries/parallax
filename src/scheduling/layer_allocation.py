@@ -19,13 +19,14 @@ embedding/LM head endpoints on the first/last nodes of a pipeline.
 
 import heapq
 from dataclasses import dataclass, field
-from functools import lru_cache
+from functools import cache
 from math import floor
-from typing import Dict, List, Literal, Optional, Set, Tuple
+from typing import Literal
 
 from parallax_utils.logging_config import get_logger
 from scheduling.model_info import ModelInfo
 from scheduling.node import Node
+
 
 logger = get_logger(__name__)
 
@@ -36,7 +37,7 @@ class LayerLoad:
 
     layer_id: int
     current_kv_size: int
-    hosting_nodes: Set[str] = field(default_factory=set)
+    hosting_nodes: set[str] = field(default_factory=set)
 
     def add_node(self, node: Node) -> None:
         """Add a node's contribution to this layer's load."""
@@ -97,7 +98,7 @@ class BaseLayerAllocator:
     def __init__(
         self,
         model_info: ModelInfo,
-        nodes: List[Node],
+        nodes: list[Node],
         *,
         rebalance_threshold: float = 0.25,
         water_filling_max_iterations: int = 40,
@@ -110,16 +111,16 @@ class BaseLayerAllocator:
         self.nodes = nodes
         self.nodes.sort(key=lambda node: node.get_decoder_layer_capacity(), reverse=True)
 
-        self.layer_to_load: Dict[int, LayerLoad] = {}
-        self.node_id_to_node: Dict[str, Node] = {}
+        self.layer_to_load: dict[int, LayerLoad] = {}
+        self.node_id_to_node: dict[str, Node] = {}
         # Sync dict with initial nodes; prevents declare() from adding duplicates
         # when allocate_left_over_nodes() processes unallocated nodes
         for node in self.nodes:
             self.node_id_to_node[node.node_id] = node
 
         # Pipeline endpoints for routing
-        self.embedding_node_ids: List[str] = []
-        self.lm_head_node_ids: List[str] = []
+        self.embedding_node_ids: list[str] = []
+        self.lm_head_node_ids: list[str] = []
         # How much we value memory vs. FLOPs for hosting power (sum to 1)
         # Threshold for layer hosting power imbalance to trigger global rebalance
         self.rebalance_threshold = rebalance_threshold
@@ -130,10 +131,10 @@ class BaseLayerAllocator:
         self.assign_left_over_nodes = assign_left_over_nodes
 
         # Node allocation
-        self.node_allocation: Dict[str, Tuple[int, int]] = {}
+        self.node_allocation: dict[str, tuple[int, int]] = {}
 
         # Heapify Layer Loads
-        self.layer_loads_heap: List[LayerLoad] = []
+        self.layer_loads_heap: list[LayerLoad] = []
         for layer_id in range(self.num_total_layers):
             layer_load = LayerLoad(layer_id=layer_id, current_kv_size=0)
             self.layer_to_load[layer_id] = layer_load
@@ -328,7 +329,7 @@ class BaseLayerAllocator:
 
     def adjust_pipeline_layers(
         self,
-        pipeline_nodes: List[Node],
+        pipeline_nodes: list[Node],
         assume_sorted: bool = False,
         power_type: Literal["flops", "bandwidth"] = "flops",
     ) -> None:
@@ -365,8 +366,8 @@ class BaseLayerAllocator:
             if node.start_layer is not None and node.end_layer is not None:
                 self.deallocate(node)
 
-        caps: List[int] = []
-        compute_powers: List[float] = []
+        caps: list[int] = []
+        compute_powers: list[float] = []
         for i, node in enumerate(nodes):
             if i == 0:
                 cap = node.get_decoder_layer_capacity(include_input_embed=True)
@@ -450,7 +451,7 @@ class BaseLayerAllocator:
                 f"Assignment did not cover all layers: assigned {start_layer} of {total_layers}"
             )
 
-    def adjust_pipeline_layers_greedy(self, pipeline_nodes: List[Node]) -> None:
+    def adjust_pipeline_layers_greedy(self, pipeline_nodes: list[Node]) -> None:
         """Greedily assign contiguous layers to `pipeline_nodes` from 0 to L.
 
         This simpler alternative to `adjust_pipeline_layers` walks nodes in the given
@@ -509,7 +510,7 @@ class BaseLayerAllocator:
                 f"Greedy assignment did not cover all layers: remaining {remaining_layers}"
             )
 
-    def list_node_allocations(self) -> List[Tuple[str, int, int]]:
+    def list_node_allocations(self) -> list[tuple[str, int, int]]:
         """List current per-node layer allocations as (node_id, start_layer, end_layer).
 
         Nodes without an allocation are omitted. Results are sorted by start_layer.
@@ -518,7 +519,7 @@ class BaseLayerAllocator:
         items.sort(key=lambda x: (x[1], x[2], x[0]))
         return items
 
-    def get_lightest_layer(self) -> Optional[LayerLoad]:
+    def get_lightest_layer(self) -> LayerLoad | None:
         """Return the current lightest-hosted layer from the heap, if any."""
         if not self.layer_loads_heap:
             return None
@@ -552,7 +553,7 @@ class BaseLayerAllocator:
         total_layers = self.num_total_layers
 
         # Build index of nodes by start_layer
-        start_to_nodes: Dict[int, List[Node]] = {}
+        start_to_nodes: dict[int, list[Node]] = {}
         for node_id, (s, e) in self.node_allocation.items():
             if s is None or e is None:
                 continue
@@ -581,7 +582,7 @@ class BaseLayerAllocator:
             for head in start_to_nodes.get(0, [])
         )
 
-    def layer_replication_stats(self) -> Tuple[int, int, float]:
+    def layer_replication_stats(self) -> tuple[int, int, float]:
         """Return (min, max, avg) number of nodes hosting each layer.
 
         Counts the number of hosting nodes per layer from `layer_to_load` and
@@ -694,7 +695,7 @@ class GreedyLayerAllocator(BaseLayerAllocator):
                 )
                 break
 
-            pipeline_nodes: List[Node] = []
+            pipeline_nodes: list[Node] = []
             remaining_layers = num_total_layers
             current_pipeline_total_capacity = total_remaining_capacity
 
@@ -805,7 +806,7 @@ class DynamicProgrammingLayerAllocator(BaseLayerAllocator):
     def __init__(
         self,
         model_info: ModelInfo,
-        nodes: List[Node],
+        nodes: list[Node],
         alpha: float = 2.0,
         *,
         assign_left_over_nodes: bool = True,
@@ -820,7 +821,7 @@ class DynamicProgrammingLayerAllocator(BaseLayerAllocator):
         )
         # Sort GPUs by layer capacity descending for stronger pruning
         self.alpha = alpha
-        self._path: Dict[Tuple[int, Tuple[int, ...], int], Tuple] = {}
+        self._path: dict[tuple[int, tuple[int, ...], int], tuple] = {}
 
     def global_allocation(self) -> bool:
         logger.debug(
@@ -856,12 +857,12 @@ class DynamicProgrammingLayerAllocator(BaseLayerAllocator):
         best_num_pipes = 0
         best_score: float = float("-inf")
 
-        best_path: Dict[Tuple[int, Tuple[int, ...], int], Tuple] = {}
+        best_path: dict[tuple[int, tuple[int, ...], int], tuple] = {}
         for k_target in range(1, max_num_pipes + 1):
-            path: Dict[Tuple[int, Tuple[int, ...], int], Tuple] = {}
+            path: dict[tuple[int, tuple[int, ...], int], tuple] = {}
 
-            @lru_cache(maxsize=None)
-            def dp(i: int, open_residuals: Tuple[int, ...], finished_pipes: int) -> int:
+            @cache
+            def dp(i: int, open_residuals: tuple[int, ...], finished_pipes: int) -> int:
                 # Completed target with no open pipelines
                 if finished_pipes == k_target and len(open_residuals) == 0:
                     path[(i, open_residuals, finished_pipes)] = ("done",)
@@ -887,7 +888,7 @@ class DynamicProgrammingLayerAllocator(BaseLayerAllocator):
 
                 # Option 1: Skip this node
                 best_cost = dp(i + 1, open_residuals, finished_pipes)
-                best_action: Tuple = ("skip",)
+                best_action: tuple = ("skip",)
 
                 # Option 2: Assign to existing open pipeline
                 for j, rj in enumerate(open_residuals):
@@ -970,12 +971,12 @@ class DynamicProgrammingLayerAllocator(BaseLayerAllocator):
         logger.debug("[DP] global_allocation completed successfully")
         return True
 
-    def _backtrack(self, best_num_pipes: int, num_nodes: int) -> List[List[Node]]:
+    def _backtrack(self, best_num_pipes: int, num_nodes: int) -> list[list[Node]]:
         # Reconstruct pipelines
         logger.debug("[DP] Backtracking to construct %d pipelines", best_num_pipes)
-        pipelines: List[List[Node]] = [[] for _ in range(best_num_pipes)]
+        pipelines: list[list[Node]] = [[] for _ in range(best_num_pipes)]
         # (residual, nodes list)
-        open_list: List[Tuple[int, List[Node]]] = []
+        open_list: list[tuple[int, list[Node]]] = []
         i = 0
         finished = 0
         while i < num_nodes and finished < best_num_pipes:

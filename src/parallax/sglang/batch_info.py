@@ -6,7 +6,6 @@ ScheduleBatch -> ModelWorkerBatch -> ForwardBatch
 """
 
 from types import SimpleNamespace
-from typing import List
 
 import torch
 from sglang.srt.managers.schedule_batch import Req, ScheduleBatch
@@ -23,6 +22,7 @@ from parallax.server.sampling.sampling_params import (
     SamplingParams as ParallaxSamplingParams,
 )
 from parallax_utils.logging_config import get_logger
+
 
 logger = get_logger(__name__)
 
@@ -46,7 +46,7 @@ def transform_sampling_params_to_sglang(old_params: ParallaxSamplingParams) -> S
     return params
 
 
-def transform_requests_to_sglang(old_requests: List[Request]) -> List[Req]:
+def transform_requests_to_sglang(old_requests: list[Request]) -> list[Req]:
     """Transforms Parallax Request to SGLang.Req format"""
     reqs = []
     for old_req in old_requests:
@@ -63,7 +63,7 @@ def transform_requests_to_sglang(old_requests: List[Request]) -> List[Req]:
 
 
 def form_sgl_batch_prefill(
-    requests: List[Request],
+    requests: list[Request],
     model_runner: ModelRunner,
 ) -> ForwardBatch:
     """Initialize a prefill ScheduleBatch -> ModelWorkerBatch -> ForwardBatch workflow"""
@@ -96,7 +96,7 @@ def form_sgl_batch_prefill(
 
 def select_batch(
     origin_batch: ScheduleBatch,
-    keep_indices: List[int],
+    keep_indices: list[int],
 ) -> ScheduleBatch:
     """
     Copy a subset of requests to form a new ScheduleBatch from the running ScheduleBatch.
@@ -165,7 +165,7 @@ def find_index(running_batch: ScheduleBatch, request_id: str):
 
 
 def form_sgl_batch_decode(
-    requests: List[Request],
+    requests: list[Request],
     model_runner: ModelRunner,
     running_batch: ScheduleBatch,
     is_first_rank: bool,

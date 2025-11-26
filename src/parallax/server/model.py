@@ -2,14 +2,13 @@
 Defines the ShardedModel class for distributing MLX models across multiple devices.
 """
 
-from typing import Optional, Tuple, Type
-
 import mlx.core as mx
 from mlx import nn
 from mlx_lm.models.base import BaseModelArgs
 
 from parallax.server.sampling.sampler import Sampler, SamplingBatchInfo
 from parallax_utils.logging_config import get_logger
+
 
 logger = get_logger(__name__)
 
@@ -28,10 +27,10 @@ class ShardedModel(nn.Module):
         model_id: str,
         start_layer: int,
         end_layer: int,
-        block_class: Type[nn.Module],
+        block_class: type[nn.Module],
         *,
         has_norm_in: bool = False,
-        dtype: Optional[mx.Dtype] = None,
+        dtype: mx.Dtype | None = None,
     ):
         super().__init__()
         self.config = config
@@ -71,8 +70,8 @@ class ShardedModel(nn.Module):
     def logits_to_tokens(
         self,
         logits: mx.array,
-        lengths: Optional[mx.array] = None,
-        sampling_info: Optional[SamplingBatchInfo] = None,
+        lengths: mx.array | None = None,
+        sampling_info: SamplingBatchInfo | None = None,
     ) -> mx.array:
         """Convert logits to token IDs with greedy decoding.
 
@@ -109,13 +108,13 @@ class ShardedModel(nn.Module):
     def __call__(
         self,
         h_or_tokens: mx.array,
-        cache: Optional[Tuple[mx.array, mx.array]] = None,
-        lengths: Optional[mx.array] = None,
-        mask: Optional[mx.array] = None,
-        window_size: Optional[int] = None,
-        state_cache: Optional[Tuple[mx.array, mx.array]] = None,
-        using_state_cache: Optional[bool] = False,
-    ) -> Tuple[mx.array, Tuple[mx.array, mx.array]]:
+        cache: tuple[mx.array, mx.array] | None = None,
+        lengths: mx.array | None = None,
+        mask: mx.array | None = None,
+        window_size: int | None = None,
+        state_cache: tuple[mx.array, mx.array] | None = None,
+        using_state_cache: bool | None = False,
+    ) -> tuple[mx.array, tuple[mx.array, mx.array]]:
         """
         Args:
             h_or_tokens:
@@ -153,28 +152,28 @@ class ShardedModel(nn.Module):
         if cache is not None:
             k_past_all_layers, v_past_all_layers = cache
             if k_past_all_layers is not None:
-                assert (
-                    k_past_all_layers.ndim == 5
-                ), f"Unexpected k_past_all_layers ndim: {k_past_all_layers.ndim}"
+                assert k_past_all_layers.ndim == 5, (
+                    f"Unexpected k_past_all_layers ndim: {k_past_all_layers.ndim}"
+                )
                 # (batch, n_layers, n_kv_heads, source_len, head_dim)
                 source_len = k_past_all_layers.shape[3]
         if state_cache is not None:
             state0_all_layers, state1_all_layers = state_cache
             if state0_all_layers is not None:
-                assert (
-                    state0_all_layers.ndim == 4
-                ), f"Unexpected state0_all_layers ndim: {state0_all_layers.ndim}"
-                assert (
-                    state1_all_layers.ndim == 5
-                ), f"Unexpected state1_all_layers ndim: {state1_all_layers.ndim}"
+                assert state0_all_layers.ndim == 4, (
+                    f"Unexpected state0_all_layers ndim: {state0_all_layers.ndim}"
+                )
+                assert state1_all_layers.ndim == 5, (
+                    f"Unexpected state1_all_layers ndim: {state1_all_layers.ndim}"
+                )
 
         if lengths is None:
             lengths = mx.full((batch,), target_len + source_len, dtype=mx.int32)
         else:
             # Validate cumulative_true_lengths shape
-            assert lengths.shape == (
-                batch,
-            ), f"lengths shape mismatch: expected ({batch},), got {lengths.shape}"
+            assert lengths.shape == (batch,), (
+                f"lengths shape mismatch: expected ({batch},), got {lengths.shape}"
+            )
 
         if cache is None:
             offset = 0

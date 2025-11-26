@@ -4,9 +4,9 @@ import logging
 import os
 import sys
 import threading
-from typing import Optional
 
-__all__ = ["get_logger", "use_parallax_log_handler", "set_log_level"]
+
+__all__ = ["get_logger", "set_log_level", "use_parallax_log_handler"]
 
 _init_lock = threading.Lock()
 _default_handler: logging.Handler | None = None
@@ -39,7 +39,7 @@ _PACKAGE_COLOR = {
 
 
 class CustomFormatter(logging.Formatter):
-    def format(self, record: logging.LogRecord) -> str:  # noqa: D401
+    def format(self, record: logging.LogRecord) -> str:
         levelname = record.levelname.upper()
         levelcolor = _LEVEL_COLOR.get(levelname, "")
         record.levelcolor = levelcolor
@@ -113,7 +113,7 @@ def set_log_level(level_name: str):
         os.environ["RUST_LOG"] = "info"
 
 
-def get_logger(name: Optional[str] = None) -> logging.Logger:
+def get_logger(name: str | None = None) -> logging.Logger:
     """
     Grab a logger with parallax’s default handler attached.
     Call this in every module instead of logging.getLogger().

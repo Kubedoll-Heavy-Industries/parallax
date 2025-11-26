@@ -1,7 +1,7 @@
 ## This is a patch file for sglang glm4_moe model to support pipeline parallelism
 
 import logging
-from typing import Iterable, Optional, Tuple
+from typing import Iterable
 
 import torch
 from sglang.srt.distributed import get_pp_group
@@ -10,10 +10,11 @@ from sglang.srt.layers.utils import get_layer_id
 from sglang.srt.model_executor.forward_batch_info import PPProxyTensors
 from sglang.srt.model_loader.weight_utils import default_weight_loader
 
+
 logger = logging.getLogger(__name__)
 
 
-def monkey_patch_load_weights(self, weights: Iterable[Tuple[str, torch.Tensor]], is_nextn=False):
+def monkey_patch_load_weights(self, weights: Iterable[tuple[str, torch.Tensor]], is_nextn=False):
     """Load model weights with proper mapping for GLM4 Moe architecture."""
     if is_nextn:
         if hasattr(self.config, "num_nextn_predict_layers"):
@@ -179,8 +180,8 @@ def apply_glm4_moe_monkey_patch():
         input_ids: torch.Tensor,
         positions: torch.Tensor,
         forward_batch,
-        inputs_embeds: Optional[torch.Tensor] = None,
-        pp_proxy_tensors: Optional[PPProxyTensors] = None,
+        inputs_embeds: torch.Tensor | None = None,
+        pp_proxy_tensors: PPProxyTensors | None = None,
         **kwargs,
     ):
         hidden_states = self.model(

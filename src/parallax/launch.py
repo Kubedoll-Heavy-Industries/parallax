@@ -32,6 +32,7 @@ from parallax_utils.ascii_anime import display_parallax_join
 from parallax_utils.logging_config import get_logger, set_log_level
 from parallax_utils.version_check import check_latest_release
 
+
 logger = get_logger("parallax.launch")
 
 
