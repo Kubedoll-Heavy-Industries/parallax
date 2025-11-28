@@ -50,24 +50,44 @@ Work on your feature in this branch.
 
 ### Installation
 
-Refer to [Installation](../README.md#installation).
+Install [uv](https://docs.astral.sh/uv/) and set up your development environment:
+
+```bash
+# Install uv (macOS)
+brew install uv
+
+# Install uv (Linux)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install dependencies
+uv sync  # macOS
+uv sync --extra sglang  # Linux with SGLang
+uv sync --extra vllm    # Linux with vLLM
+```
 
 ### Code Formatting with pre-commit
 
-To maintain a consistent code style, we use [pre-commit](https://pre-commit.com/) in this project. Please follow the steps below before submitting your changes:
+To maintain a consistent code style, we use [pre-commit](https://pre-commit.com/) with [Ruff](https://docs.astral.sh/ruff/) for linting and formatting.
 
 **1. Install and set up pre-commit:**
 ```bash
-pip3 install pre-commit
 pre-commit install
 ```
 
-**2. Run pre-commit to check and format your code before each commit:**
+**2. Run pre-commit to check and format your code:**
 ```bash
 pre-commit run --all-files
 ```
 
-This will help ensure your code adheres to the project's standards and reduces formatting-related review comments.
+### Testing
+
+```bash
+# Run tests
+uv run pytest tests/ -v
+
+# Run tests with coverage
+uv run pytest tests/ -v --cov=src/parallax --cov=src/scheduling --cov-report=term
+```
 
 ### Push to your remote branch
 

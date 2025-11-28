@@ -2,7 +2,7 @@
 ## Installation
 
 ### Prerequisites
-- Python>=3.11.0,<3.14.0
+- Python>=3.11,<3.15
 - Ubuntu-24.04 for Blackwell GPUs
 
 Below are installation methods for different operating systems.
@@ -14,34 +14,58 @@ Below are installation methods for different operating systems.
 |macOS | ❌️ | ✅️ | ❌️ |
 
 ### From Source
-#### For Linux/WSL (GPU):
-Note: If you are using DGX Spark, please refer to the Docker installation section
+
+Parallax uses [uv](https://docs.astral.sh/uv/) for fast, reliable dependency management.
+
+**Install uv:**
+
+```sh
+# macOS
+brew install uv
+
+# Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+**Clone and install:**
+
 ```sh
 git clone https://github.com/GradientHQ/parallax.git
 cd parallax
-pip install -e '.[gpu]'
+
+# macOS (MLX dependencies install automatically)
+uv sync
+
+# Linux with SGLang backend
+uv sync --extra sglang
+
+# Linux with vLLM backend
+uv sync --extra vllm
 ```
 
-#### For macOS (Apple silicon):
+> [!NOTE]
+> If you are using DGX Spark, please refer to the Docker installation section.
 
-We recommend macOS users to create an isolated Python virtual environment before installation.
+**Install the CLI globally (optional):**
 
 ```sh
-git clone https://github.com/GradientHQ/parallax.git
-cd parallax
-
-# Enter Python virtual environment
-python3 -m venv ./venv
-source ./venv/bin/activate
-
-pip install -e '.[mac]'
+uv tool install .
+# To use: uvx parallax
 ```
 
-Next time to re-activate this virtual environment, run ```source ./venv/bin/activate```.
+#### Legacy pip installation
 
-#### Extra step for development:
+If you prefer pip, the following still works:
+
 ```sh
-pip install -e '.[dev]'
+# macOS
+pip install -e .
+
+# Linux with SGLang
+pip install -e ".[sglang]"
+
+# Linux with vLLM
+pip install -e ".[vllm]"
 ```
 
 ### Windows Application
@@ -91,10 +115,17 @@ The container starts under parallax workspace and you should be able to run para
 
 ### Uninstalling Parallax
 
-For macOS or Linux, if you've installed Parallax via pip and want to uninstall it, you can use the following command:
+For macOS or Linux:
 
 ```sh
+# If installed using uv tool
+uv tool uninstall parallax
+
+# If installed using pip
 pip uninstall parallax
+
+# Remove local environment
+rm -rf .venv
 ```
 
 For Docker installations, remove Parallax images and containers using standard Docker commands:
