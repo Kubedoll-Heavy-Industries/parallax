@@ -77,6 +77,15 @@ conflicts = [
     { extra = "vllm" },
   ],
 ]
+
+# Build sglang from source to include Turing (sm_75) CUDA kernels for GTX 2060 SUPER
+no-binary-package = ["sglang", "flashinfer", "flashinfer-python"]
+
+[tool.uv.extra-build-variables]
+# 7.5=Turing, 8.0/8.6/8.7=Ampere, 8.9=Ada, 9.0=Hopper, 10.0/10.1=Blackwell, 12.0=Blackwell (GB20x)
+sglang = { TORCH_CUDA_ARCH_LIST = "7.5;8.0;8.6;8.7;8.9;9.0;10.0;10.1;12.0;12.1" }
+flashinfer = { TORCH_CUDA_ARCH_LIST = "7.5;8.0;8.6;8.7;8.9;9.0;10.0;10.1;12.0;12.1" }
+flashinfer-python = { TORCH_CUDA_ARCH_LIST = "7.5;8.0;8.6;8.7;8.9;9.0;10.0;10.1;12.0;12.1" }
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
@@ -102,7 +111,3 @@ omit = [
 precision = 2
 show_missing = true
 skip_covered = false
-
-
-
-
