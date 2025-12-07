@@ -30,7 +30,7 @@ dependencies = [
   "lattica==1.0.14",   # Pinned for P2P protocol stability
   "orjson>=3.10.0,<4.0.0",
 
-  "torch>=2.9.0; sys_platform == 'darwin'",
+  "torch>=2.9.0",
   "mlx-lm==0.28.0",  # Pinned - 0.28.3+ has breaking API changes (removed get_model_path)
   "mlx==0.29.1; sys_platform == 'darwin'",
   "mlx[cpu]==0.29.1; sys_platform != 'darwin'",
@@ -55,11 +55,12 @@ dev = [
 
 [project.optional-dependencies]
 sglang = [
-  "sglang[checkpoint-engine,diffusion]==0.5.5; sys_platform != 'darwin'",
+  "sglang[checkpoint-engine,diffusion]==0.5.6; sys_platform != 'darwin'",
+  "flashinfer-cubin; sys_platform != 'darwin'",  # Pre-compiled kernels for sm_75+ (Turing+)
 ]
 
 vllm = [
-  "vllm==0.11.0; sys_platform != 'darwin'",
+  "vllm==0.12.0; sys_platform != 'darwin'",
 ]
 
 # Benchmarking tools
@@ -77,15 +78,6 @@ conflicts = [
     { extra = "vllm" },
   ],
 ]
-
-# Build sglang from source to include Turing (sm_75) CUDA kernels for GTX 2060 SUPER
-no-binary-package = ["sglang", "flashinfer", "flashinfer-python"]
-
-[tool.uv.extra-build-variables]
-# 7.5=Turing, 8.0/8.6/8.7=Ampere, 8.9=Ada, 9.0=Hopper, 10.0/10.1=Blackwell, 12.0=Blackwell (GB20x)
-sglang = { TORCH_CUDA_ARCH_LIST = "7.5;8.0;8.6;8.7;8.9;9.0;10.0;10.1;12.0;12.1" }
-flashinfer = { TORCH_CUDA_ARCH_LIST = "7.5;8.0;8.6;8.7;8.9;9.0;10.0;10.1;12.0;12.1" }
-flashinfer-python = { TORCH_CUDA_ARCH_LIST = "7.5;8.0;8.6;8.7;8.9;9.0;10.0;10.1;12.0;12.1" }
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
